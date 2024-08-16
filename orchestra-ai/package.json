@@ -3,6 +3,12 @@
   "displayName": "OrchestraAI",
   "description": "Orchestrating AIs to develop code.",
   "version": "0.0.1",
+  "publisher": "ameritusweb",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ameritusweb/OrchestraAI"
+  },
+  "license": "LGPL-2.1-or-later",
   "engines": {
     "vscode": "^1.92.0"
   },
@@ -10,7 +16,7 @@
     "name": "ameritusweb"
   },
   "categories": ["Other"],
-  "icon": "images/icon.png",
+  "icon": "images/orchestra.png",
   "galleryBanner": {
     "color": "#C80000",
     "theme": "dark"
@@ -22,8 +28,44 @@
       {
         "command": "orchestra-ai.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "orchestra-ai.showCustomTab",
+        "title": "Show My Custom Tab"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "orchestraActivity",
+          "title": "Orchestra AI",
+          "icon": "images/music.svg"
+        }
+      ],
+      "panel": [
+        {
+          "id": "myCustomPanel",
+          "title": "My Panel",
+          "icon": "images/music.svg"
+        }
+      ]
+    },
+    "views": {
+      "orchestraActivity": [
+        {
+          "id": "orchestraActivityView",
+          "type": "webview",
+          "name": "",
+          "contextualTitle": "My View Title"
+        }
+      ],
+      "myCustomPanel": [
+        {
+          "id": "myCustomView",
+          "name": "My Custom Tab"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run package",
@@ -32,6 +74,7 @@
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
     "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
+    "package2": "vsce package",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
