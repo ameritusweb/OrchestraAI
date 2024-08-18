@@ -1,38 +1,49 @@
-import { useEffect, useState } from 'react';
-import EnhancedZenObservable from './EnhancedZenObservable'; // Adjust the import path accordingly
+import { useEffect, useState, useCallback } from 'react';
+import EnhancedZenObservable from '../observables/EnhancedZenObservable'; // Adjust the import path accordingly
 
 const vscode = acquireVsCodeApi();
 const sharedObservable = new EnhancedZenObservable(); // Create a shared observable instance
 
 export function useSharedContext(key = '', useDiff = false) {
-  const [state, setState] = useState(() => sharedObservable.getState(key));
+    const [state, setState] = useState(() => sharedObservable.getState(key));
 
-  useEffect(() => {
-    // Subscribe to the shared observable
-    const subscription = sharedObservable.subscribe(
-      key,
-      (newState) => setState(newState),
-      useDiff
-    );
+    useEffect(() => {
+        const subscription = sharedObservable.subscribe(
+            key,
+            (newState) => {
+                // Only update state if it's different
+                setState(prevState => {
+                    if (JSON.stringify(prevState) !== JSON.stringify(newState)) {
+                        vscode.postMessage({ command: 'stateUpdate', key, data: newState });
+                        return newState;
+                    }
+                    return prevState;
+                });
+            },
+            useDiff
+        );
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [key, useDiff]);
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [key, useDiff]);
 
-  const updateState = (newState) => {
-    sharedObservable.setState((currentState) => {
-      const updatedState = typeof newState === 'function' ? newState(currentState) : newState;
-      return {
-        ...currentState,
-        [key]: updatedState,
-      };
-    });
-    vscode.postMessage({
-      command: 'updateState',
-      data: sharedObservable.getState(key),
-    });
-  };
+    const updateState = useCallback((updater) => {
+        try {
+            sharedObservable.setState((currentState) => {
+                const newState = typeof updater === 'function' ? updater(currentState[key]) : updater;
+                if (JSON.stringify(currentState[key]) !== JSON.stringify(newState)) {
+                    return {
+                        ...currentState,
+                        [key]: newState,
+                    };
+                }
+                return currentState;
+            });
+        } catch (error) {
+            console.error('Failed to update state:', error);
+        }
+    }, [key]);
 
-  return [state, updateState];
+    return [state, updateState];
 }

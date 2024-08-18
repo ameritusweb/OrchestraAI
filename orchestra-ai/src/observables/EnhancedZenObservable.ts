@@ -1,21 +1,29 @@
-import ZenObservable from 'zen-observable';
+import Observable from 'zen-observable';
 import { computeDiff as computeDiffUtil, computeArrayDiff as computeArrayDiffUtil } from '../utils/observableUtils';
 
-class EnhancedSubscription {
-  constructor(model, subscribe) {
-    this._zenObservable = new ZenObservable(subscribe);
+type ObserverType<T> = Partial<ZenObservable.Observer<T>>;
+
+class EnhancedSubscription<T = any> {
+  private _zenObservable: Observable<T>;
+  private _subscriptions: Map<ZenObservable.Subscription, ObserverType<T>>;
+  private _parentObservable: EnhancedSubscription<T> | null;
+  private _model: any;
+
+  constructor(model: any, subscribe: (observer: ObserverType<T>) => ZenObservable.Subscription | void) {
+    this._zenObservable = new Observable(subscribe);
     this._subscriptions = new Map();
     this._parentObservable = null;
     this._model = model;
   }
 
-  subscribe(observerOrNext, error, complete) {
-    let observer;
+  subscribe(observerOrNext: ((value: T) => void) | ObserverType<T>, error?: (error: any) => void, complete?: () => void) {
+    let observer: ObserverType<T>;
+
     if (typeof observerOrNext === 'function') {
       observer = {
         next: observerOrNext,
         error: error || (() => {}),
-        complete: complete || (() => {})
+        complete: complete || (() => {}),
       };
     } else {
       observer = observerOrNext;
@@ -33,102 +41,97 @@ class EnhancedSubscription {
     };
   }
 
-  map(project) {
-    const mapped = new EnhancedSubscription(observer => 
+  filter(predicate: (value: T) => boolean): EnhancedSubscription<T> {
+    const filtered = new EnhancedSubscription<T>(this._model, observer =>
       this._zenObservable.subscribe({
-        next: value => observer.next(project(value)),
-        error: error => observer.error(error),
-        complete: () => observer.complete()
-      })
-    );
-    mapped._parentObservable = this;
-    return mapped;
-  }
-
-  filter(predicate) {
-    const filtered = new EnhancedSubscription(observer => 
-      this._zenObservable.subscribe({
-        next: value => predicate(value) && observer.next(value),
-        error: error => observer.error(error),
-        complete: () => observer.complete()
+        next: value => predicate(value) && observer.next?.(value),
+        error: error => observer.error?.(error),
+        complete: () => observer.complete?.(),
       })
     );
     filtered._parentObservable = this;
     return filtered;
   }
 
-  notify(value) {
-    this._subscriptions.forEach((observer) => {
-      observer.next(value);
+  notify(value: T): void {
+    this._subscriptions.forEach(observer => {
+      observer.next?.(value);
     });
   }
 
-  notifyError(error) {
-    this._subscriptions.forEach((observer) => {
-      observer.error(error);
+  notifyError(error: any): void {
+    this._subscriptions.forEach(observer => {
+      observer.error?.(error);
     });
   }
 
-  notifyComplete() {
-    this._subscriptions.forEach((observer) => {
-      observer.complete();
+  notifyComplete(): void {
+    this._subscriptions.forEach(observer => {
+      observer.complete?.();
     });
   }
 }
 
-class HistoryModel {
+class HistoryModel<T> {
+  past: T[];
+  future: T[];
+
   constructor() {
     this.past = [];
     this.future = [];
   }
 
-  push(state) {
+  push(state: T): void {
     this.past.push(state);
     this.future = [];
   }
 
-  undo(currentState) {
+  undo(currentState: T): T | null {
     if (this.canUndo()) {
-      const pastState = this.past.pop();
+      const pastState = this.past.pop()!;
       this.future.unshift(currentState);
       return pastState;
     }
     return null;
   }
 
-  redo(currentState) {
+  redo(currentState: T): T | null {
     if (this.canRedo()) {
-      const nextState = this.future.shift();
+      const nextState = this.future.shift()!;
       this.past.push(currentState);
       return nextState;
     }
     return null;
   }
 
-  canUndo() {
+  canUndo(): boolean {
     return this.past.length > 0;
   }
 
-  canRedo() {
+  canRedo(): boolean {
     return this.future.length > 0;
   }
 
-  clear() {
+  clear(): void {
     this.past = [];
     this.future = [];
   }
 }
 
 class EnhancedZenObservable {
-  constructor(initialState = {}) {
+  private state: Record<string, any>;
+  private historyModel: HistoryModel<Record<string, any>>;
+  private observables: Map<string, EnhancedSubscription<any>>;
+  private diffObservables: Map<string, EnhancedSubscription<any>>;
+
+  constructor(initialState: Record<string, any> = {}) {
     this.state = initialState;
     this.historyModel = new HistoryModel();
-    this.currentIndex = 0;
     this.observables = new Map();
     this.diffObservables = new Map();
   }
 
-  applyDiff(diff, currentState = this.state, prefix = '') {
+  applyDiff(diff: any, currentState: any = this.state, prefix: string = ''): void {
     for (const key in diff) {
       const fullKey = prefix ? `${prefix}.${key}` : key;
       if (diff[key].type === 'replace') {
@@ -148,27 +151,27 @@ class EnhancedZenObservable {
     }
   }
 
-  applyArrayDiff(arrayDiff, currentArray, prefix) {
-    arrayDiff.removed.forEach(({ index }) => {
+  applyArrayDiff(arrayDiff: any, currentArray: any[], prefix: string): void {
+    arrayDiff.removed.forEach(({ index }: { index: number }) => {
       currentArray.splice(index, 1);
     });
-    arrayDiff.added.forEach(({ index, value }) => {
+    arrayDiff.added.forEach(({ index, value }: { index: number; value: any }) => {
       currentArray.splice(index, 0, value);
     });
-    arrayDiff.changed.forEach(({ index, value }) => {
+    arrayDiff.changed.forEach(({ index, value }: { index: number; value: any }) => {
       this.applyDiff(value, currentArray[index], `${prefix}.${index}`);
     });
     this.notifyObservers(prefix, currentArray, arrayDiff);
   }
 
-  notifyObservers(key, value, diff) {
+  notifyObservers(key: string, value: any, diff: any): void {
     // Notify exact matches
     if (this.observables.has(key)) {
-      const observable = this.observables.get(key);
+      const observable = this.observables.get(key)!;
       observable.notify(value);
     }
     if (this.diffObservables.has(key)) {
-      const diffObservable = this.diffObservables.get(key);
+      const diffObservable = this.diffObservables.get(key)!;
       diffObservable.notify(diff);
     }
 
@@ -189,15 +192,15 @@ class EnhancedZenObservable {
     }
   }
 
-  computeDiff(oldObj, newObj) {
+  computeDiff(oldObj: any, newObj: any): any {
     return computeDiffUtil(oldObj, newObj);
   }
 
-  computeArrayDiff(oldArray, newArray) {
+  computeArrayDiff(oldArray: any[], newArray: any[]): any {
     return computeArrayDiffUtil(oldArray, newArray);
   }
 
-  subscribe(key, callback, useDiff = false, callerLocation = 'Unknown') {
+  subscribe(key: string, callback: (value: any) => void, useDiff: boolean = false, callerLocation: string = 'Unknown'): { then: EnhancedSubscription<any>; unsubscribe: () => void; } {
     if (typeof key !== 'string') {
       console.error('Invalid key for subscribe method');
       return new EnhancedSubscription(this, () => {}).subscribe(() => {});
@@ -215,11 +218,11 @@ class EnhancedZenObservable {
       }
     }
 
-    const subscription = observables.get(key);
-    return subscription.subscribe(traceCallback(callback, `Subscription to ${key}`, callerLocation));
+    const subscription = observables.get(key)!;
+    return subscription.subscribe(callback);
   }
 
-  setState(updater, recordHistory = true) {
+  setState(updater: ((state: Record<string, any>) => Record<string, any>) | Record<string, any>, recordHistory: boolean = true): void {
     try {
       const prevState = JSON.parse(JSON.stringify(this.state));
       const newState = typeof updater === 'function' ? updater(this.state) : updater;
@@ -241,7 +244,7 @@ class EnhancedZenObservable {
     }
   }
 
-  undo() {
+  undo(): void {
     const currentState = JSON.parse(JSON.stringify(this.state));
     const previousState = this.historyModel.undo(currentState);
     if (previousState) {
@@ -249,7 +252,7 @@ class EnhancedZenObservable {
     }
   }
 
-  redo() {
+  redo(): void {
     const currentState = JSON.parse(JSON.stringify(this.state));
     const nextState = this.historyModel.redo(currentState);
     if (nextState) {
@@ -257,18 +260,18 @@ class EnhancedZenObservable {
     }
   }
 
-  canUndo() {
+  canUndo(): boolean {
     return this.historyModel.canUndo();
   }
 
-  canRedo() {
+  canRedo(): boolean {
     return this.historyModel.canRedo();
   }
 
-  getState(key) {
+  getState(key?: string): any {
     if (!key) return JSON.parse(JSON.stringify(this.state));
     const keys = key.split('.');
-    let value = this.state;
+    let value: any = this.state;
     for (let i = 0; i < keys.length; i++) {
       const k = keys[i];
       if (value === undefined || value === null) {
@@ -283,10 +286,10 @@ class EnhancedZenObservable {
     return value !== undefined ? JSON.parse(JSON.stringify(value)) : undefined;
   }
 
-   generateNewVersion() {
-     const timestamp = Date.now().toString(36);
-     const randomStr = Math.random().toString(36).substr(2, 5);
-     return `${timestamp}-${randomStr}`;
+  generateNewVersion(): string {
+    const timestamp = Date.now().toString(36);
+    const randomStr = Math.random().toString(36).substr(2, 5);
+    return `${timestamp}-${randomStr}`;
   }
 }
 

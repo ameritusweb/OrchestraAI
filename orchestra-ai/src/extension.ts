@@ -1,6 +1,10 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import EnhancedZenObservable from './observables/EnhancedZenObservable';
+
+const sharedObservable = new EnhancedZenObservable();
+const activeWebviews: vscode.WebviewView[] = [];
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -41,14 +45,22 @@ export function activate(context: vscode.ExtensionContext) {
 
     // const myTreeDataProvider2 = new MyTreeDataProvider();
 
-    const provider = new ProjectViewProvider(context.extensionUri);
+    const provider = new ProjectViewProvider(context.extensionUri, context.subscriptions);
 
     vscode.window.registerWebviewViewProvider('orchestraActivityView', provider);
+
 
     const provider2 = new CustomViewProvider(context.extensionUri);
 
     vscode.window.registerWebviewViewProvider('orchestraActivityView2', provider2);
     // vscode.window.registerTreeDataProvider('orchestraActivityView', provider);
+
+    // Broadcast state updates to all active webviews
+    sharedObservable.subscribe('', (newState) => {
+        activeWebviews.forEach(webview => {
+        webview.webview.postMessage({ command: 'stateUpdate', data: newState });
+        });
+    });
 }
 
 class MyTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
@@ -81,6 +93,24 @@ function getWebviewContent() {
 // This method is called when your extension is deactivated
 export function deactivate() {}
 
+function setupWebviewMessageHandler(view: vscode.WebviewView, subscriptions: vscode.Disposable[]) {
+    const disposables: vscode.Disposable[] = [];
+  
+    const messageHandler = view.webview.onDidReceiveMessage(
+      (message) => {
+        if (message.command === 'updateState') {
+          sharedObservable.setState({ [message.key]: message.data });
+        }
+      }
+    );
+  
+    disposables.push(messageHandler);
+  
+    view.onDidDispose(() => {
+      disposables.forEach(disposable => disposable.dispose());
+    }, null, subscriptions);
+  }
+
 class ProjectViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'orchestra-ai.projectView';
 
@@ -88,6 +118,7 @@ class ProjectViewProvider implements vscode.WebviewViewProvider {
 
     constructor(
         private readonly _extensionUri: vscode.Uri,
+        private readonly _subscriptions: vscode.Disposable[],
     ) { }
 
     public resolveWebviewView(
@@ -107,6 +138,8 @@ class ProjectViewProvider implements vscode.WebviewViewProvider {
         const html = this._getHtmlForWebview(webviewView.webview);
         vscode.window.showInformationMessage(html);
         webviewView.webview.html = html;
+        
+        setupWebviewMessageHandler(webviewView, this._subscriptions);
     }
 
     private _getHtmlForWebview(webview: vscode.Webview): string {
