@@ -26,16 +26,7 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "orchestra-ai.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "orchestra-ai.showCustomTab",
-        "title": "Show My Custom Tab"
-      }
-    ],
+    "commands": [],
     "viewsContainers": {
       "activitybar": [
         {
@@ -57,19 +48,13 @@
         {
           "id": "orchestraActivityView",
           "type": "webview",
-          "name": "My1",
+          "name": "Project View",
           "contextualTitle": "My View Title"
-        },
-        {
-          "id": "orchestraActivityView2",
-          "type": "webview",
-          "name": "My2",
-          "contextualTitle": "My View Title2"
         }
       ],
       "myCustomPanel": [
         {
-          "id": "myCustomView",
+          "id": "mySettingsView",
           "type": "webview",
           "name": "My Custom Tab"
         }
