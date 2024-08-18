@@ -1,0 +1,40 @@
+/* Create a CSS file, e.g., custom.css */
+:root {
+    --bs-body-bg: var(--vscode-editor-background);
+    --bs-body-color: var(--vscode-editor-foreground);
+    --bs-primary: var(--vscode-button-background);
+    --bs-primary-rgb: var(--vscode-button-background);
+    --bs-secondary: var(--vscode-button-secondaryBackground);
+    --bs-secondary-rgb: var(--vscode-button-secondaryBackground);
+    --bs-success: var(--vscode-terminal-ansiGreen);
+    --bs-success-rgb: var(--vscode-terminal-ansiGreen);
+    --bs-danger: var(--vscode-terminal-ansiRed);
+    --bs-danger-rgb: var(--vscode-terminal-ansiRed);
+    --bs-warning: var(--vscode-terminal-ansiYellow);
+    --bs-warning-rgb: var(--vscode-terminal-ansiYellow);
+    --bs-info: var(--vscode-terminal-ansiBlue);
+    --bs-info-rgb: var(--vscode-terminal-ansiBlue);
+    --bs-light: var(--vscode-input-background);
+    --bs-light-rgb: var(--vscode-input-background);
+    --bs-dark: var(--vscode-editor-background);
+    --bs-dark-rgb: var(--vscode-editor-background);
+    --bs-link-color: var(--vscode-textLink-foreground);
+    --bs-link-hover-color: var(--vscode-textLink-activeForeground);
+  }
+  
+  body {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+  }
+  
+  .btn-primary {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: var(--vscode-button-foreground);
+  }
+  
+  .btn-secondary {
+    background-color: var(--bs-secondary);
+    border-color: var(--bs-secondary);
+    color: var(--vscode-button-secondaryForeground);
+  }

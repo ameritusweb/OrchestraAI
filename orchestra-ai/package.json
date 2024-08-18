@@ -2,7 +2,7 @@
   "name": "orchestra-ai",
   "displayName": "OrchestraAI",
   "description": "Orchestrating AIs to develop code.",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "publisher": "ameritusweb",
   "repository": {
     "type": "git",
@@ -12,10 +12,12 @@
   "engines": {
     "vscode": "^1.92.0"
   },
- "author": {
+  "author": {
     "name": "ameritusweb"
   },
-  "categories": ["Other"],
+  "categories": [
+    "Other"
+  ],
   "icon": "images/orchestra.png",
   "galleryBanner": {
     "color": "#C80000",
@@ -45,7 +47,7 @@
       "panel": [
         {
           "id": "myCustomPanel",
-          "title": "My Panel",
+          "title": "AI Settings",
           "icon": "images/music.svg"
         }
       ]
@@ -55,13 +57,20 @@
         {
           "id": "orchestraActivityView",
           "type": "webview",
-          "name": "",
+          "name": "My1",
           "contextualTitle": "My View Title"
+        },
+        {
+          "id": "orchestraActivityView2",
+          "type": "webview",
+          "name": "My2",
+          "contextualTitle": "My View Title2"
         }
       ],
       "myCustomPanel": [
         {
           "id": "myCustomView",
+          "type": "webview",
           "name": "My Custom Tab"
         }
       ]
@@ -83,16 +92,24 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.92.0",
     "@types/mocha": "^10.0.7",
     "@types/node": "20.x",
+    "@types/vscode": "^1.92.0",
     "@typescript-eslint/eslint-plugin": "^7.14.1",
     "@typescript-eslint/parser": "^7.11.0",
-    "eslint": "^8.57.0",
-    "esbuild": "^0.21.5",
-    "npm-run-all": "^4.1.5",
-    "typescript": "^5.4.5",
     "@vscode/test-cli": "^0.0.9",
-    "@vscode/test-electron": "^2.4.0"
+    "@vscode/test-electron": "^2.4.0",
+    "esbuild": "^0.21.5",
+    "eslint": "^8.57.0",
+    "fs-extra": "^11.2.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
+    "bootstrap": "^5.3.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zen-observable": "^0.10.0"
   }
 }
