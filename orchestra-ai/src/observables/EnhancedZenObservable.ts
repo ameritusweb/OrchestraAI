@@ -1,5 +1,8 @@
+import * as vscode from 'vscode';
 import Observable from 'zen-observable';
 import { computeDiff as computeDiffUtil, computeArrayDiff as computeArrayDiffUtil } from '../utils/observableUtils';
+import { FileSystemUtils } from '../utils/FileSystemUtils';
+import { StateShape, initialState } from '../constants/initialState';
 
 type ObserverType<T> = Partial<ZenObservable.Observer<T>>;
 
@@ -119,13 +122,16 @@ class HistoryModel<T> {
 }
 
 class EnhancedZenObservable {
-  private state: Record<string, any>;
-  private historyModel: HistoryModel<Record<string, any>>;
+  private stateFileUri: vscode.Uri | null = null;
+  private fileSystemUtils: FileSystemUtils;
+  private state: StateShape;
+  private historyModel: HistoryModel<StateShape>;
   private observables: Map<string, EnhancedSubscription<any>>;
   private diffObservables: Map<string, EnhancedSubscription<any>>;
 
-  constructor(initialState: Record<string, any> = {}) {
+  constructor(fileSystemUtils: FileSystemUtils) {
     this.state = initialState;
+    this.fileSystemUtils = fileSystemUtils;
     this.historyModel = new HistoryModel();
     this.observables = new Map();
     this.diffObservables = new Map();
@@ -222,7 +228,23 @@ class EnhancedZenObservable {
     return subscription.subscribe(callback);
   }
 
-  setState(updater: ((state: Record<string, any>) => Record<string, any>) | Record<string, any>, recordHistory: boolean = true): void {
+  async initializeFromFile(context: vscode.ExtensionContext): Promise<void> {
+    try {
+      this.stateFileUri = await this.fileSystemUtils.getOrCreateStateFile(context);
+      const savedState = await this.fileSystemUtils.readStateFile(this.stateFileUri);
+      this.setState(savedState);
+    } catch (error) {
+      console.error('Error initializing state from file:', error);
+    }
+  }
+
+  private async persistState(): Promise<void> {
+    if (this.stateFileUri) {
+      await this.fileSystemUtils.writeStateFile(this.stateFileUri, this.state);
+    }
+  }
+
+  setState(updater: ((state: StateShape) => StateShape) | StateShape, recordHistory: boolean = true): void {
     try {
       const prevState = JSON.parse(JSON.stringify(this.state));
       const newState = typeof updater === 'function' ? updater(this.state) : updater;
@@ -238,6 +260,8 @@ class EnhancedZenObservable {
       if (recordHistory) {
         this.historyModel.push(prevState);
       }
+
+      this.persistState();
 
     } catch (error) {
       console.error('Error setting state:', error);
@@ -268,7 +292,7 @@ class EnhancedZenObservable {
     return this.historyModel.canRedo();
   }
 
-  getState(key?: string): any {
+  getState(key?: string): StateShape | null {
     if (!key) return JSON.parse(JSON.stringify(this.state));
     const keys = key.split('.');
     let value: any = this.state;
@@ -276,7 +300,7 @@ class EnhancedZenObservable {
       const k = keys[i];
       if (value === undefined || value === null) {
         console.warn(`Warning: Property '${keys.slice(0, i + 1).join('.')}' is undefined in the state object. Consider adding it to the initial state.`);
-        return undefined;
+        return null;
       }
       value = value[k];
     }

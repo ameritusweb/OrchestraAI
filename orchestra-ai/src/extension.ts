@@ -4,14 +4,17 @@ import * as vscode from 'vscode';
 import EnhancedZenObservable from './observables/EnhancedZenObservable';
 import { ProjectViewProvider } from './providers/ProjectViewProvider';
 import { SettingsViewProvider } from './providers/SettingsViewProvider';
+import { FileSystemUtils } from './utils/FileSystemUtils';
 
-const sharedObservable = new EnhancedZenObservable();
+const fileSystemUtils = new FileSystemUtils();
+const sharedObservable = new EnhancedZenObservable(fileSystemUtils);
 const activeWebviews: vscode.WebviewView[] = [];
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 
+    await sharedObservable.initializeFromFile(context);
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "orchestra-ai" is now active!');
