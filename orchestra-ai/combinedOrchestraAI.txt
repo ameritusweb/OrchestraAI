@@ -1,0 +1,858 @@
+import React from 'react';
+// Import Bootstrap JS
+import 'bootstrap';
+import { useSharedContext } from '../hooks/useSharedContext';
+
+const ProjectView = () => {
+  const [projectState, updateProjectState] = useSharedContext('projectView');
+
+  const {
+    name,
+    description,
+    language,
+    framework,
+    tools,
+    aiModel,
+    codingStandards
+  } = projectState || {};
+
+  const handleNameChange = (e) => {
+    updateProjectState(prevState => ({
+      ...prevState,
+      name: e.target.value
+    }));
+  };
+
+  const handleDescriptionChange = (e) => {
+    updateProjectState(prevState => ({
+      ...prevState,
+      description: e.target.value
+    }));
+  };
+
+  return (
+    <div className="project-view container mt-4">
+      <h2 className="mb-4">Project Details</h2>
+      <form>
+        <div className="mb-3">
+          <label htmlFor="project-name" className="form-label">Name:</label>
+          <input
+            id="project-name"
+            type="text"
+            className="form-control"
+            value={name || ''}
+            onChange={handleNameChange}
+          />
+        </div>
+        <div className="mb-3">
+          <label htmlFor="project-description" className="form-label">Description:</label>
+          <textarea
+            id="project-description"
+            className="form-control"
+            value={description || ''}
+            onChange={handleDescriptionChange}
+          />
+        </div>
+        <div className="mb-3">
+          <label htmlFor="project-language" className="form-label">Language:</label>
+          <span id="project-language" className="form-control-plaintext">{language}</span>
+        </div>
+        <div className="mb-3">
+          <label htmlFor="project-framework" className="form-label">Framework:</label>
+          <span id="project-framework" className="form-control-plaintext">{framework}</span>
+        </div>
+        <div className="mb-3">
+          <label htmlFor="project-tools" className="form-label">Tools:</label>
+          <ul id="project-tools" className="list-group">
+            {tools && tools.map((tool, index) => (
+              <li key={index} className="list-group-item">{tool}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="mb-3">
+          <label htmlFor="project-ai-model" className="form-label">AI Model:</label>
+          <span id="project-ai-model" className="form-control-plaintext">{aiModel}</span>
+        </div>
+        <div className="mb-3">
+          <label htmlFor="project-coding-standards" className="form-label">Coding Standards:</label>
+          <pre id="project-coding-standards" className="form-control-plaintext">{codingStandards}</pre>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default ProjectView;
+/* ================================================================================ */
+import React, { useState } from 'react';
+// Import Bootstrap JS
+import 'bootstrap';
+import { useSharedContext } from '../hooks/useSharedContext';
+
+const standardsCategories = [
+  'Naming Conventions',
+  'Code Style',
+  'Documentation',
+  'Error Handling',
+  'Performance',
+  'Security',
+  'Best Practices',
+  'Testing',
+  'Tooling',
+  'Styling and Design',
+  'File and Folder Naming',
+  'Project Structure',
+  'Data Management'
+];
+
+const SettingsView = () => {
+  const [standardsState, updateStandardsState] = useSharedContext('settingsView');
+  const { standards } = standardsState || { standards: {} };
+
+  const [activeCategory, setActiveCategory] = useState(standardsCategories[0]);
+  const [editingStandard, setEditingStandard] = useState(null);
+
+  const handleEditStandard = (category, key) => {
+    setEditingStandard({ category, key, value: standards[category][key] });
+  };
+
+  return (
+    <div className="standards-view container mt-4">
+      <h2 className="mb-4">Coding Standards</h2>
+
+      <div className="row">
+        <div className="col-md-3">
+          <ul className="list-group">
+            {standardsCategories.map(category => (
+              <li
+                key={category}
+                className={`list-group-item ${activeCategory === category ? 'active' : ''}`}
+                onClick={() => setActiveCategory(category)}
+              >
+                {category}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="col-md-9">
+          <h3>{activeCategory}</h3>
+          {standards[activeCategory] && Object.entries(standards[activeCategory]).map(([key, value]) => (
+            <div key={key} className="card mb-3">
+              <div className="card-body">
+                <h5 className="card-title">{key}</h5>
+                <p className="card-text">{value}</p>
+                <button className="btn btn-sm btn-outline-primary" onClick={() => handleEditStandard(activeCategory, key)}>
+                  Edit
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SettingsView;
+/* ================================================================================ */
+/* Create a CSS file, e.g., custom.css */
+:root {
+    --bs-body-bg: var(--vscode-editor-background);
+    --bs-body-color: var(--vscode-editor-foreground);
+    --bs-primary: var(--vscode-button-background);
+    --bs-primary-rgb: var(--vscode-button-background);
+    --bs-secondary: var(--vscode-button-secondaryBackground);
+    --bs-secondary-rgb: var(--vscode-button-secondaryBackground);
+    --bs-success: var(--vscode-terminal-ansiGreen);
+    --bs-success-rgb: var(--vscode-terminal-ansiGreen);
+    --bs-danger: var(--vscode-terminal-ansiRed);
+    --bs-danger-rgb: var(--vscode-terminal-ansiRed);
+    --bs-warning: var(--vscode-terminal-ansiYellow);
+    --bs-warning-rgb: var(--vscode-terminal-ansiYellow);
+    --bs-info: var(--vscode-terminal-ansiBlue);
+    --bs-info-rgb: var(--vscode-terminal-ansiBlue);
+    --bs-light: var(--vscode-input-background);
+    --bs-light-rgb: var(--vscode-input-background);
+    --bs-dark: var(--vscode-editor-background);
+    --bs-dark-rgb: var(--vscode-editor-background);
+    --bs-link-color: var(--vscode-textLink-foreground);
+    --bs-link-hover-color: var(--vscode-textLink-activeForeground);
+  }
+  
+  body {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+  }
+  
+  .btn-primary {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: var(--vscode-button-foreground);
+  }
+  
+  .btn-secondary {
+    background-color: var(--bs-secondary);
+    border-color: var(--bs-secondary);
+    color: var(--vscode-button-secondaryForeground);
+  }
+/* ================================================================================ */
+// The module 'vscode' contains the VS Code extensibility API
+// Import the module and reference it with the alias vscode in your code below
+import * as vscode from 'vscode';
+import EnhancedZenObservable from './observables/EnhancedZenObservable';
+import { ProjectViewProvider } from './providers/ProjectViewProvider';
+import { SettingsViewProvider } from './providers/SettingsViewProvider';
+
+const sharedObservable = new EnhancedZenObservable();
+const activeWebviews: vscode.WebviewView[] = [];
+
+// This method is called when your extension is activated
+// Your extension is activated the very first time the command is executed
+export function activate(context: vscode.ExtensionContext) {
+
+	// Use the console to output diagnostic information (console.log) and errors (console.error)
+	// This line of code will only be executed once when your extension is activated
+	console.log('Congratulations, your extension "orchestra-ai" is now active!');
+
+	// const myTreeDataProvider = new MyTreeDataProvider();
+
+    // const provider = new ColorsViewProvider(context.extensionUri);
+
+    // vscode.window.registerWebviewViewProvider('orchestraActivityView', provider);
+
+    const settingsViewProvider = new SettingsViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
+
+    vscode.window.registerWebviewViewProvider('mySettingsView', settingsViewProvider);
+
+    const provider = new ProjectViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
+
+    vscode.window.registerWebviewViewProvider('orchestraActivityView', provider);
+
+    // vscode.window.registerTreeDataProvider('orchestraActivityView', provider);
+
+    // Broadcast state updates to all active webviews
+    sharedObservable.subscribe('', (newState) => {
+        activeWebviews.forEach(webview => {
+        webview.webview.postMessage({ command: 'stateUpdate', data: newState });
+        });
+    });
+}
+
+class MyTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+    getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
+        return element;
+    }
+
+    getChildren(element?: vscode.TreeItem): Thenable<vscode.TreeItem[]> {
+        return Promise.resolve([new vscode.TreeItem('Item 1'), new vscode.TreeItem('Item 2')]);
+    }
+}
+
+// This method is called when your extension is deactivated
+export function deactivate() {}
+/* ================================================================================ */
+import { useEffect, useState, useCallback } from 'react';
+import EnhancedZenObservable from '../observables/EnhancedZenObservable'; // Adjust the import path accordingly
+
+const vscode = acquireVsCodeApi();
+const sharedObservable = new EnhancedZenObservable(); // Create a shared observable instance
+
+export function useSharedContext(key = '', useDiff = false) {
+    const [state, setState] = useState(() => sharedObservable.getState(key));
+
+    useEffect(() => {
+        const subscription = sharedObservable.subscribe(
+            key,
+            (newState) => {
+                // Only update state if it's different
+                setState(prevState => {
+                    if (JSON.stringify(prevState) !== JSON.stringify(newState)) {
+                        vscode.postMessage({ command: 'stateUpdate', key, data: newState });
+                        return newState;
+                    }
+                    return prevState;
+                });
+            },
+            useDiff
+        );
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [key, useDiff]);
+
+    const updateState = useCallback((updater) => {
+        try {
+            sharedObservable.setState((currentState) => {
+                const newState = typeof updater === 'function' ? updater(currentState[key]) : updater;
+                if (JSON.stringify(currentState[key]) !== JSON.stringify(newState)) {
+                    return {
+                        ...currentState,
+                        [key]: newState,
+                    };
+                }
+                return currentState;
+            });
+        } catch (error) {
+            console.error('Failed to update state:', error);
+        }
+    }, [key]);
+
+    return [state, updateState];
+}
+/* ================================================================================ */
+import Observable from 'zen-observable';
+import { computeDiff as computeDiffUtil, computeArrayDiff as computeArrayDiffUtil } from '../utils/observableUtils';
+
+type ObserverType<T> = Partial<ZenObservable.Observer<T>>;
+
+class EnhancedSubscription<T = any> {
+  private _zenObservable: Observable<T>;
+  private _subscriptions: Map<ZenObservable.Subscription, ObserverType<T>>;
+  private _parentObservable: EnhancedSubscription<T> | null;
+  private _model: any;
+
+  constructor(model: any, subscribe: (observer: ObserverType<T>) => ZenObservable.Subscription | void) {
+    this._zenObservable = new Observable(subscribe);
+    this._subscriptions = new Map();
+    this._parentObservable = null;
+    this._model = model;
+  }
+
+  subscribe(observerOrNext: ((value: T) => void) | ObserverType<T>, error?: (error: any) => void, complete?: () => void) {
+    let observer: ObserverType<T>;
+
+    if (typeof observerOrNext === 'function') {
+      observer = {
+        next: observerOrNext,
+        error: error || (() => {}),
+        complete: complete || (() => {}),
+      };
+    } else {
+      observer = observerOrNext;
+    }
+
+    const subscription = this._zenObservable.subscribe(observer);
+    this._subscriptions.set(subscription, observer);
+
+    return {
+      then: this,
+      unsubscribe: () => {
+        subscription.unsubscribe();
+        this._subscriptions.delete(subscription);
+      }
+    };
+  }
+
+  filter(predicate: (value: T) => boolean): EnhancedSubscription<T> {
+    const filtered = new EnhancedSubscription<T>(this._model, observer =>
+      this._zenObservable.subscribe({
+        next: value => predicate(value) && observer.next?.(value),
+        error: error => observer.error?.(error),
+        complete: () => observer.complete?.(),
+      })
+    );
+    filtered._parentObservable = this;
+    return filtered;
+  }
+
+  notify(value: T): void {
+    this._subscriptions.forEach(observer => {
+      observer.next?.(value);
+    });
+  }
+
+  notifyError(error: any): void {
+    this._subscriptions.forEach(observer => {
+      observer.error?.(error);
+    });
+  }
+
+  notifyComplete(): void {
+    this._subscriptions.forEach(observer => {
+      observer.complete?.();
+    });
+  }
+}
+
+class HistoryModel<T> {
+  past: T[];
+  future: T[];
+
+  constructor() {
+    this.past = [];
+    this.future = [];
+  }
+
+  push(state: T): void {
+    this.past.push(state);
+    this.future = [];
+  }
+
+  undo(currentState: T): T | null {
+    if (this.canUndo()) {
+      const pastState = this.past.pop()!;
+      this.future.unshift(currentState);
+      return pastState;
+    }
+    return null;
+  }
+
+  redo(currentState: T): T | null {
+    if (this.canRedo()) {
+      const nextState = this.future.shift()!;
+      this.past.push(currentState);
+      return nextState;
+    }
+    return null;
+  }
+
+  canUndo(): boolean {
+    return this.past.length > 0;
+  }
+
+  canRedo(): boolean {
+    return this.future.length > 0;
+  }
+
+  clear(): void {
+    this.past = [];
+    this.future = [];
+  }
+}
+
+class EnhancedZenObservable {
+  private state: Record<string, any>;
+  private historyModel: HistoryModel<Record<string, any>>;
+  private observables: Map<string, EnhancedSubscription<any>>;
+  private diffObservables: Map<string, EnhancedSubscription<any>>;
+
+  constructor(initialState: Record<string, any> = {}) {
+    this.state = initialState;
+    this.historyModel = new HistoryModel();
+    this.observables = new Map();
+    this.diffObservables = new Map();
+  }
+
+  applyDiff(diff: any, currentState: any = this.state, prefix: string = ''): void {
+    for (const key in diff) {
+      const fullKey = prefix ? `${prefix}.${key}` : key;
+      if (diff[key].type === 'replace') {
+        currentState[key] = diff[key].value;
+        this.notifyObservers(fullKey, currentState[key], diff[key]);
+      } else if (diff[key].type === 'object') {
+        if (typeof currentState[key] !== 'object') {
+          currentState[key] = {};
+        }
+        this.applyDiff(diff[key].value, currentState[key], fullKey);
+      } else if (diff[key].type === 'array') {
+        if (!Array.isArray(currentState[key])) {
+          currentState[key] = [];
+        }
+        this.applyArrayDiff(diff[key].value, currentState[key], fullKey);
+      }
+    }
+  }
+
+  applyArrayDiff(arrayDiff: any, currentArray: any[], prefix: string): void {
+    arrayDiff.removed.forEach(({ index }: { index: number }) => {
+      currentArray.splice(index, 1);
+    });
+    arrayDiff.added.forEach(({ index, value }: { index: number; value: any }) => {
+      currentArray.splice(index, 0, value);
+    });
+    arrayDiff.changed.forEach(({ index, value }: { index: number; value: any }) => {
+      this.applyDiff(value, currentArray[index], `${prefix}.${index}`);
+    });
+    this.notifyObservers(prefix, currentArray, arrayDiff);
+  }
+
+  notifyObservers(key: string, value: any, diff: any): void {
+    // Notify exact matches
+    if (this.observables.has(key)) {
+      const observable = this.observables.get(key)!;
+      observable.notify(value);
+    }
+    if (this.diffObservables.has(key)) {
+      const diffObservable = this.diffObservables.get(key)!;
+      diffObservable.notify(diff);
+    }
+
+    // Notify partial matches
+    for (const [observerKey, observable] of this.observables.entries()) {
+      if (key.startsWith(observerKey) && key !== observerKey) {
+        observable.notify(this.getState(observerKey));
+      }
+    }
+    for (const [observerKey, diffObservable] of this.diffObservables.entries()) {
+      if (key.startsWith(observerKey) && key !== observerKey) {
+        diffObservable.notify({
+          type: 'nested',
+          path: key.slice(observerKey.length + 1),
+          value: diff
+        });
+      }
+    }
+  }
+
+  computeDiff(oldObj: any, newObj: any): any {
+    return computeDiffUtil(oldObj, newObj);
+  }
+
+  computeArrayDiff(oldArray: any[], newArray: any[]): any {
+    return computeArrayDiffUtil(oldArray, newArray);
+  }
+
+  subscribe(key: string, callback: (value: any) => void, useDiff: boolean = false, callerLocation: string = 'Unknown'): { then: EnhancedSubscription<any>; unsubscribe: () => void; } {
+    if (typeof key !== 'string') {
+      console.error('Invalid key for subscribe method');
+      return new EnhancedSubscription(this, () => {}).subscribe(() => {});
+    }
+
+    const observables = useDiff ? this.diffObservables : this.observables;
+
+    // Create observables for all parts of the path
+    const parts = key.split('.');
+    let currentKey = '';
+    for (const part of parts) {
+      currentKey = currentKey ? `${currentKey}.${part}` : part;
+      if (!observables.has(currentKey)) {
+        observables.set(currentKey, new EnhancedSubscription(this, () => {}));
+      }
+    }
+
+    const subscription = observables.get(key)!;
+    return subscription.subscribe(callback);
+  }
+
+  setState(updater: ((state: Record<string, any>) => Record<string, any>) | Record<string, any>, recordHistory: boolean = true): void {
+    try {
+      const prevState = JSON.parse(JSON.stringify(this.state));
+      const newState = typeof updater === 'function' ? updater(this.state) : updater;
+      const prevVersion = prevState.stateVersion;
+      newState.stateVersion = this.generateNewVersion();
+      const diff = this.computeDiff(this.state, newState);
+      if (Object.keys(diff).length === 1) {
+        newState.stateVersion = prevVersion;
+        return; // no changes except for state version
+      }
+      this.applyDiff(diff);
+
+      if (recordHistory) {
+        this.historyModel.push(prevState);
+      }
+
+    } catch (error) {
+      console.error('Error setting state:', error);
+    }
+  }
+
+  undo(): void {
+    const currentState = JSON.parse(JSON.stringify(this.state));
+    const previousState = this.historyModel.undo(currentState);
+    if (previousState) {
+      this.setState(() => previousState, false);
+    }
+  }
+
+  redo(): void {
+    const currentState = JSON.parse(JSON.stringify(this.state));
+    const nextState = this.historyModel.redo(currentState);
+    if (nextState) {
+      this.setState(() => nextState, false);
+    }
+  }
+
+  canUndo(): boolean {
+    return this.historyModel.canUndo();
+  }
+
+  canRedo(): boolean {
+    return this.historyModel.canRedo();
+  }
+
+  getState(key?: string): any {
+    if (!key) return JSON.parse(JSON.stringify(this.state));
+    const keys = key.split('.');
+    let value: any = this.state;
+    for (let i = 0; i < keys.length; i++) {
+      const k = keys[i];
+      if (value === undefined || value === null) {
+        console.warn(`Warning: Property '${keys.slice(0, i + 1).join('.')}' is undefined in the state object. Consider adding it to the initial state.`);
+        return undefined;
+      }
+      value = value[k];
+    }
+    if (value === undefined) {
+      console.warn(`Warning: Property '${key}' is undefined in the state object. Consider adding it to the initial state.`);
+    }
+    return value !== undefined ? JSON.parse(JSON.stringify(value)) : undefined;
+  }
+
+  generateNewVersion(): string {
+    const timestamp = Date.now().toString(36);
+    const randomStr = Math.random().toString(36).substr(2, 5);
+    return `${timestamp}-${randomStr}`;
+  }
+}
+
+export default EnhancedZenObservable;
+
+/* ================================================================================ */
+import * as vscode from 'vscode';
+import EnhancedZenObservable from '../observables/EnhancedZenObservable';
+import { setupWebviewMessageHandler } from '../utils/webviewUtils';
+
+export class ProjectViewProvider implements vscode.WebviewViewProvider {
+    public static readonly viewType = 'orchestra-ai.projectView';
+
+    private _view?: vscode.WebviewView;
+
+    constructor(
+        private readonly _extensionUri: vscode.Uri,
+        private readonly _subscriptions: vscode.Disposable[],
+        private readonly _sharedObservable: EnhancedZenObservable,
+    ) { }
+
+    public resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        context: vscode.WebviewViewResolveContext,
+        _token: vscode.CancellationToken,
+    ) {
+        this._view = webviewView;
+
+        webviewView.webview.options = {
+            enableScripts: true,
+            // Make sure to update the local resource roots to allow access to your dist folder
+            localResourceRoots: [vscode.Uri.joinPath(this._extensionUri, 'dist')]
+        };
+
+        // Set the HTML content of the webview, which includes the reference to your projectView.js script
+        const html = this._getHtmlForWebview(webviewView.webview);
+        vscode.window.showInformationMessage(html);
+        webviewView.webview.html = html;
+        
+        setupWebviewMessageHandler(webviewView, this._subscriptions, this._sharedObservable);
+    }
+
+    private _getHtmlForWebview(webview: vscode.Webview): string {
+        // Construct the URI for the bundled projectView.js script
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', 'projectView.js'));
+        vscode.window.showInformationMessage(scriptUri.toString());
+        const bootstrapUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', "css", 'bootstrap.min.css'));
+        const customStylesUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', "css", 'custom.css'));
+        return `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Orchestra AI Project View</title>
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src ${webview.cspSource};">
+                <link href="${bootstrapUri}" rel="stylesheet">
+                <link href="${customStylesUri}" rel="stylesheet">
+            </head>
+            <body>
+                <div id="root"></div>
+                <script src="${scriptUri}"></script>
+            </body>
+            </html>
+        `;
+    }
+}
+/* ================================================================================ */
+import * as vscode from 'vscode';
+import EnhancedZenObservable from '../observables/EnhancedZenObservable';
+import { setupWebviewMessageHandler } from '../utils/webviewUtils';
+
+export class SettingsViewProvider implements vscode.WebviewViewProvider {
+    public static readonly viewType = 'orchestra-ai.settingsView';
+
+    private _view?: vscode.WebviewView;
+
+    constructor(
+        private readonly _extensionUri: vscode.Uri,
+        private readonly _subscriptions: vscode.Disposable[],
+        private readonly _sharedObservable: EnhancedZenObservable,
+    ) { }
+
+    public resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        context: vscode.WebviewViewResolveContext,
+        _token: vscode.CancellationToken,
+    ) {
+        this._view = webviewView;
+
+        webviewView.webview.options = {
+            enableScripts: true,
+            // Make sure to update the local resource roots to allow access to your dist folder
+            localResourceRoots: [vscode.Uri.joinPath(this._extensionUri, 'dist')]
+        };
+
+        // Set the HTML content of the webview, which includes the reference to your projectView.js script
+        const html = this._getHtmlForWebview(webviewView.webview);
+        vscode.window.showInformationMessage(html);
+        webviewView.webview.html = html;
+        
+        setupWebviewMessageHandler(webviewView, this._subscriptions, this._sharedObservable);
+    }
+
+    private _getHtmlForWebview(webview: vscode.Webview): string {
+        // Construct the URI for the bundled projectView.js script
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', 'settingsView.js'));
+        vscode.window.showInformationMessage(scriptUri.toString());
+        const bootstrapUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', "css", 'bootstrap.min.css'));
+        const customStylesUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', "css", 'custom.css'));
+        return `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Orchestra AI Settings View</title>
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src ${webview.cspSource};">
+                <link href="${bootstrapUri}" rel="stylesheet">
+                <link href="${customStylesUri}" rel="stylesheet">
+            </head>
+            <body>
+                <div id="root"></div>
+                <script src="${scriptUri}"></script>
+            </body>
+            </html>
+        `;
+    }
+}
+/* ================================================================================ */
+import * as assert from 'assert';
+
+// You can import and use all API from the 'vscode' module
+// as well as import your extension to test it
+import * as vscode from 'vscode';
+// import * as myExtension from '../../extension';
+
+suite('Extension Test Suite', () => {
+	vscode.window.showInformationMessage('Start all tests.');
+
+	test('Sample test', () => {
+		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
+		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
+	});
+});
+
+/* ================================================================================ */
+type DiffResult = {
+    type: 'replace' | 'object' | 'array';
+    value: any;
+  };
+  
+  type ObjectDiff = {
+    [key: string]: DiffResult;
+  };
+  
+  type ArrayDiff = {
+    removed: { index: number }[];
+    added: { index: number; value: any }[];
+    changed: { index: number; value: ObjectDiff }[];
+  };
+  
+  export const computeDiff = (oldObj: Record<string, any>, newObj: Record<string, any>): ObjectDiff => {
+    const diff: ObjectDiff = {};
+    const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
+  
+    for (const key of allKeys) {
+      const oldValue = oldObj[key];
+      const newValue = newObj[key];
+  
+      if (oldValue === newValue) continue;
+  
+      if (oldValue === null || newValue === null) {
+        diff[key] = { type: 'replace', value: newValue };
+      } else if (typeof oldValue !== typeof newValue) {
+        diff[key] = { type: 'replace', value: newValue };
+      } else if (typeof newValue === 'object') {
+        if (Array.isArray(newValue)) {
+          // If array or object, handle accordingly
+          diff[key] = { type: 'replace', value: newValue };
+        } else {
+          const nestedDiff = computeDiff(oldValue, newValue);
+          if (Object.keys(nestedDiff).length > 0) {
+            diff[key] = { type: 'object', value: nestedDiff };
+          }
+        }
+      } else {
+        diff[key] = { type: 'replace', value: newValue };
+      }
+    }
+  
+    return diff;
+  };
+  
+  export const computeArrayDiff = (oldArray: any[], newArray: any[]): ArrayDiff => {
+    const diff: ArrayDiff = { removed: [], added: [], changed: [] };
+    const maxLength = Math.max(oldArray.length, newArray.length);
+  
+    for (let i = 0; i < maxLength; i++) {
+      if (i >= oldArray.length) {
+        diff.added.push({ index: i, value: newArray[i] });
+      } else if (i >= newArray.length) {
+        diff.removed.push({ index: i });
+      } else if (JSON.stringify(oldArray[i]) !== JSON.stringify(newArray[i])) {
+        diff.changed.push({ index: i, value: computeDiff(oldArray[i], newArray[i]) });
+      }
+    }
+  
+    return diff;
+  };
+  
+/* ================================================================================ */
+import * as vscode from 'vscode';
+import EnhancedZenObservable from '../observables/EnhancedZenObservable';
+
+export function setupWebviewMessageHandler(view: vscode.WebviewView, subscriptions: vscode.Disposable[], sharedObservable: EnhancedZenObservable) {
+    const disposables: vscode.Disposable[] = [];
+  
+    const messageHandler = view.webview.onDidReceiveMessage(
+      (message) => {
+        if (message.command === 'updateState') {
+          sharedObservable.setState({ [message.key]: message.data });
+        }
+      }
+    );
+  
+    disposables.push(messageHandler);
+  
+    view.onDidDispose(() => {
+      disposables.forEach(disposable => disposable.dispose());
+    }, null, subscriptions);
+  }
+/* ================================================================================ */
+import React from 'react';
+import ProjectView from '../components/ProjectView';
+import { createRoot } from 'react-dom/client';
+
+const rootElement = document.getElementById('root');
+const root = createRoot(rootElement);
+
+root.render(<ProjectView />);
+
+// Handle incoming messages from the extension
+window.addEventListener('message', (event) => {
+  const message = event.data;
+  console.log('Message received in ProjectView:', message);
+});
+
+/* ================================================================================ */
+import React from 'react';
+import SettingsView from '../components/SettingsView';
+import { createRoot } from 'react-dom/client';
+
+const rootElement = document.getElementById('root');
+const root = createRoot(rootElement);
+
+root.render(<SettingsView />);
+
+// Handle incoming messages from the extension
+window.addEventListener('message', (event) => {
+  const message = event.data;
+  console.log('Message received in SettingsView:', message);
+});
