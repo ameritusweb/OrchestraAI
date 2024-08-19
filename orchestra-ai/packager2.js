@@ -71,9 +71,11 @@ async function getAllFiles(dirPath, arrayOfFiles = []) {
       const fullPath = path.join(dirPath, file);
       const relativePath = path.relative(appDirectory, fullPath);
 
-      if (ig.ignores(relativePath) || relativePath.includes('node_modules')) {
+      if (ig.ignores(relativePath) || relativePath.includes('node_modules') || fullPath.includes('components')) {
         continue;
       }
+
+      console.log('Processing file:', fullPath);
 
       const stat = await fs.promises.stat(fullPath);
       if (stat.isDirectory()) {

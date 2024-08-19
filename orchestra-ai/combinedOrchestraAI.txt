@@ -5,7 +5,13 @@ import { useSharedContext } from '../hooks/useSharedContext';
 
 const ChatView = () => {
   const [chatState, updateChatState, vscode] = useSharedContext('chatView');
-  const { messages, selectedModel, context } = chatState || { messages: [], selectedModel: 'gpt-4o', context: '' };
+  const { messages, selectedModel, context, useLocalApi, localApiEndpoint } = chatState || {
+    messages: [],
+    selectedModel: 'gpt-4o',
+    context: '',
+    useLocalApi: false,
+    localApiEndpoint: 'http://localhost:5000/api/languagemodel'
+  };
 
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -17,9 +23,10 @@ const ChatView = () => {
   }, [messages]);
 
   useEffect(() => {
-    // Fetch available models when component mounts
-    vscode.postMessage({ command: 'getAvailableModels' });
-  }, []);
+    if (!useLocalApi) {
+      vscode.postMessage({ command: 'getAvailableModels' });
+    }
+  }, [useLocalApi]);
 
   useEffect(() => {
     const messageHandler = (event) => {
@@ -33,9 +40,9 @@ const ChatView = () => {
             ...prevState,
             messages: [...prevState.messages, { role: 'assistant', content: message.content }]
           }));
+          setIsLoading(false);
           break;
         case 'error':
-          // Handle error messages
           console.error(message.error);
           setIsLoading(false);
           break;
@@ -65,7 +72,9 @@ const ChatView = () => {
       command: 'sendMessage',
       message: userInput,
       model: selectedModel,
-      context: context
+      context: context,
+      useLocalApi: useLocalApi,
+      localApiEndpoint: localApiEndpoint
     });
   };
 
@@ -73,6 +82,20 @@ const ChatView = () => {
     updateChatState(prevState => ({
       ...prevState,
       selectedModel: event.target.value
+    }));
+  };
+
+  const handleApiToggle = () => {
+    updateChatState(prevState => ({
+      ...prevState,
+      useLocalApi: !prevState.useLocalApi
+    }));
+  };
+
+  const handleLocalApiEndpointChange = (event) => {
+    updateChatState(prevState => ({
+      ...prevState,
+      localApiEndpoint: event.target.value
     }));
   };
 
@@ -93,18 +116,46 @@ const ChatView = () => {
       <h2 className="mb-4">AI Chat</h2>
 
       <div className="mb-3">
-        <label htmlFor="model-select" className="form-label">Select AI Model:</label>
-        <select
-          id="model-select"
-          className="form-select"
-          value={selectedModel}
-          onChange={handleModelChange}
-        >
-          {availableModels.map(model => (
-            <option key={model.id} value={model.id}>{model.id}</option>
-          ))}
-        </select>
+        <div className="form-check form-switch">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id="apiToggle"
+            checked={useLocalApi}
+            onChange={handleApiToggle}
+          />
+          <label className="form-check-label" htmlFor="apiToggle">
+            Use Local API
+          </label>
+        </div>
       </div>
+
+      {useLocalApi ? (
+        <div className="mb-3">
+          <label htmlFor="local-api-endpoint" className="form-label">Local API Endpoint:</label>
+          <input
+            type="text"
+            className="form-control"
+            id="local-api-endpoint"
+            value={localApiEndpoint}
+            onChange={handleLocalApiEndpointChange}
+          />
+        </div>
+      ) : (
+        <div className="mb-3">
+          <label htmlFor="model-select" className="form-label">Select AI Model:</label>
+          <select
+            id="model-select"
+            className="form-select"
+            value={selectedModel}
+            onChange={handleModelChange}
+          >
+            {availableModels.map(model => (
+              <option key={model.id} value={model.id}>{model.id}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="mb-3">
         <button className="btn btn-secondary me-2" onClick={handleClearContext}>Clear Context</button>
@@ -128,9 +179,9 @@ const ChatView = () => {
         <textarea
           className="form-control"
           value={userInput}
-          onChange={(e) => setUserInput(e.target.value)}
+          onChange={(e) => setUserInput(e.target['value'])}
           placeholder="Type your message here..."
-          rows="3"
+          rows={3}
         />
         <button
           className="btn btn-primary"
@@ -145,6 +196,203 @@ const ChatView = () => {
 };
 
 export default ChatView;
+/* ================================================================================ */
+ import React, { useState, useEffect, useRef } from 'react';
+// Import Bootstrap JS
+import 'bootstrap';
+import { useSharedContext } from '../hooks/useSharedContext';
+
+const stages = [
+  'Project Setup',
+  'Test Creation',
+  'Code Implementation',
+  'Linting',
+  'Code Review',
+  'Refactoring'
+];
+
+const stageDescriptions = [
+  'Setting up the project structure and initial configurations.',
+  'Creating test cases based on project requirements.',
+  'Implementing the code to pass the created tests.',
+  'Running linters to ensure code quality and adherence to standards.',
+  'Reviewing the implemented code for potential improvements.',
+  'Refactoring the code to improve its structure and efficiency.'
+];
+
+const ProgressBar = ({ progress }) => (
+  <div className="mb-4">
+    <h5>Progress</h5>
+    <div className="progress">
+      <div
+        className="progress-bar"
+        role="progressbar"
+        style={{ width: `${progress}%` }}
+        aria-valuenow={progress}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        {progress}%
+      </div>
+    </div>
+  </div>
+);
+
+const ControlButtons = ({
+  onNext,
+  onReplay,
+  onPause,
+  onFixTest,
+  onManualIntervention,
+  isPaused,
+  isManualMode,
+  isLastStage,
+  isLoading
+}) => (
+  <div className="d-flex flex-wrap gap-2 mb-4">
+    <button
+      className="btn btn-primary"
+      onClick={onNext}
+      disabled={isLastStage || isLoading}
+    >
+      Next
+    </button>
+    <button className="btn btn-secondary" onClick={onReplay} disabled={isLoading}>
+      Replay
+    </button>
+    <button
+      className={`btn ${isPaused ? 'btn-success' : 'btn-warning'}`}
+      onClick={onPause}
+      disabled={isLoading}
+    >
+      {isPaused ? 'Resume' : 'Pause'}
+    </button>
+    <button className="btn btn-info" onClick={onFixTest} disabled={isLoading}>
+      {isLoading ? 'Fixing...' : 'Fix Test'}
+    </button>
+    <button
+      className={`btn ${isManualMode ? 'btn-danger' : 'btn-outline-danger'}`}
+      onClick={onManualIntervention}
+      disabled={isLoading}
+    >
+      {isManualMode ? 'Exit Manual Mode' : 'Manual Intervention'}
+    </button>
+  </div>
+);
+
+const OrchestratorControlView = () => {
+  
+  const [orchestratorState, updateOrchestratorState] = useSharedContext('orchestratorView');
+  const {
+    currentStage,
+    tasks,
+    isPaused,
+    isManualMode,
+    error
+  } = orchestratorState || {
+    currentStage: 0,
+    tasks: [],
+    isPaused: false,
+    isManualMode: false,
+    error: null
+  };
+
+  const calculateProgress = () => {
+    const completedTasks = tasks.filter(task => task.completed).length;
+    return Math.round((completedTasks / tasks.length) * 100) || 0;
+  };
+
+  const handleNext = () => {
+    if (currentStage < stages.length - 1) {
+      updateOrchestratorState(prevState => ({
+        ...prevState,
+        currentStage: prevState.currentStage + 1,
+        tasks: [], // Reset tasks for the new stage
+        error: null
+      }));
+    } else {
+      updateOrchestratorState(prevState => ({
+        ...prevState,
+        error: 'Already at the final stage'
+      }));
+    }
+  };
+
+  const handleReplay = () => {
+    updateOrchestratorState(prevState => ({
+      ...prevState,
+      tasks: prevState.tasks.map(task => ({ ...task, completed: false })),
+      error: null
+    }));
+  };
+
+  const handlePause = () => {
+    updateOrchestratorState(prevState => ({
+      ...prevState,
+      isPaused: !prevState.isPaused,
+      error: null
+    }));
+  };
+
+  const handleFixTest = () => {
+    console.log('Instructing AI to fix failing test');
+    // Simulating an async operation
+    updateOrchestratorState(prevState => ({ ...prevState, isLoading: true }));
+    setTimeout(() => {
+      updateOrchestratorState(prevState => ({ ...prevState, isLoading: false }));
+    }, 2000);
+  };
+
+  const handleManualIntervention = () => {
+    updateOrchestratorState(prevState => ({
+      ...prevState,
+      isManualMode: !prevState.isManualMode,
+      error: null
+    }));
+  };
+
+  return (
+    <div className="orchestrator-control-view container mt-4">
+      <h2 className="mb-4">Orchestrator Control</h2>
+      
+      <div className="card mb-4">
+        <div className="card-body">
+          <h5 className="card-title">Current Stage</h5>
+          <p className="card-text">{stages[currentStage]}</p>
+          <small className="text-muted">{stageDescriptions[currentStage]}</small>
+        </div>
+      </div>
+
+      <ProgressBar progress={calculateProgress()} />
+
+      <ControlButtons
+        onNext={handleNext}
+        onReplay={handleReplay}
+        onPause={handlePause}
+        onFixTest={handleFixTest}
+        onManualIntervention={handleManualIntervention}
+        isPaused={isPaused}
+        isManualMode={isManualMode}
+        isLastStage={currentStage === stages.length - 1}
+        isLoading={orchestratorState?.isLoading}
+      />
+
+      {isManualMode && (
+        <div className="alert alert-info mt-3" role="alert">
+          Manual Intervention Mode: You can now manually write code or tests. Click 'Exit Manual Mode' when finished.
+        </div>
+      )}
+
+      {error && (
+        <div className="alert alert-danger mt-3" role="alert">
+          Error: {error}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default OrchestratorControlView;
 /* ================================================================================ */
 import React from 'react';
 // Import Bootstrap JS
@@ -303,6 +551,728 @@ const SettingsView = () => {
 
 export default SettingsView;
 /* ================================================================================ */
+ import React, { useState, useEffect, useRef } from 'react';
+// Import Bootstrap JS
+import 'bootstrap';
+import { useSharedContext } from '../hooks/useSharedContext';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import DatePicker from 'react-datepicker';
+
+const TaskView = () => {
+  
+  const [taskState, updateTaskState] = useSharedContext('taskView');
+  const { tasks } = taskState || { tasks: [] };
+  const [editingTask, setEditingTask] = useState(null);
+  const [filter, setFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('priority');
+  const [expandedTasks, setExpandedTasks] = useState({});
+
+  useEffect(() => {
+    const now = new Date();
+    const upcomingTasks = tasks.filter(task => {
+      const dueDate = new Date(task.dueDate);
+      const timeDiff = dueDate.getTime() - now.getTime();
+      const daysDiff = timeDiff / (1000 * 3600 * 24);
+      return daysDiff <= 3 && daysDiff > 0;
+    });
+
+    if (upcomingTasks.length > 0) {
+      // Here you would typically show a notification in VS Code
+      console.log('Upcoming tasks:', upcomingTasks);
+    }
+  }, [tasks]);
+
+  const filteredAndSortedTasks = tasks
+    .filter(task => filter === 'all' || task.status === filter)
+    .sort((a, b) => {
+      if (sortBy === 'priority') {
+        const priorityOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
+        return priorityOrder[b.priority] - priorityOrder[a.priority];
+      } else if (sortBy === 'dueDate') {
+        return (new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+      }
+      return 0;
+    });
+
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+
+    const newTasks = Array.from(tasks);
+    const [reorderedItem] = newTasks.splice(result.source.index, 1);
+    newTasks.splice(result.destination.index, 0, reorderedItem);
+
+    updateTaskState(prevState => ({ ...prevState, tasks: newTasks }));
+  };
+
+  const handleAddTask = () => {
+    const newTask = {
+      id: Date.now(),
+      title: 'New Task',
+      description: '',
+      status: 'To-do',
+      priority: 'Medium',
+      assignedTo: 'User',
+      relatedTests: [],
+      dueDate: new Date(),
+      subtasks: []
+    };
+    updateTaskState(prevState => ({
+      ...prevState,
+      tasks: [...prevState.tasks, newTask]
+    }));
+  };
+
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+  };
+
+  const handleSaveTask = (editedTask) => {
+    if (!validateTask(editedTask)) return;
+
+    updateTaskState(prevState => ({
+      ...prevState,
+      tasks: prevState.tasks.map(t => t.id === editedTask.id ? editedTask : t)
+    }));
+    setEditingTask(null);
+  };
+
+  const handleDeleteTask = (taskId) => {
+    if (window.confirm('Are you sure you want to delete this task?')) {
+      updateTaskState(prevState => ({
+        ...prevState,
+        tasks: prevState.tasks.filter(t => t.id !== taskId)
+      }));
+    }
+  };
+
+  const validateTask = (task) => {
+    if (task.title.trim() === '') {
+      alert('Task title cannot be empty');
+      return false;
+    }
+    if (tasks.some(t => t.id !== task.id && t.title === task.title)) {
+      alert('Task title must be unique');
+      return false;
+    }
+    return true;
+  };
+
+  const toggleTaskExpansion = (taskId) => {
+    setExpandedTasks(prev => ({ ...prev, [taskId]: !prev[taskId] }));
+  };
+
+  return (
+    <div className="task-view container mt-4">
+      <h2 className="mb-4">Tasks</h2>
+      <div className="mb-3">
+        <button className="btn btn-primary me-2" onClick={handleAddTask}>Add Task</button>
+        <select className="form-select d-inline-block w-auto me-2" onChange={(e) => setFilter(e.target['value'])}>
+          <option value="all">All</option>
+          <option value="To-do">To-do</option>
+          <option value="In-progress">In-progress</option>
+          <option value="Done">Done</option>
+        </select>
+        <select className="form-select d-inline-block w-auto" onChange={(e) => setSortBy(e.target['value'])}>
+          <option value="priority">Sort by Priority</option>
+          <option value="dueDate">Sort by Due Date</option>
+        </select>
+      </div>
+      
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="taskList">
+          {(provided) => (
+            <ul className="list-group" {...provided.droppableProps} ref={provided.innerRef}>
+              {filteredAndSortedTasks.map((task, index) => (
+                <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
+                  {(provided) => (
+                    <li
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      className="list-group-item mb-2"
+                    >
+                      {editingTask && editingTask.id === task.id ? (
+                        <TaskEditForm task={task} onSave={handleSaveTask} onCancel={() => setEditingTask(null)} />
+                      ) : (
+                        <TaskItem 
+                          task={task} 
+                          onEdit={handleEditTask} 
+                          onDelete={handleDeleteTask}
+                          isExpanded={expandedTasks[task.id]}
+                          onToggleExpansion={() => toggleTaskExpansion(task.id)}
+                        />
+                      )}
+                    </li>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </ul>
+          )}
+        </Droppable>
+      </DragDropContext>
+    </div>
+  );
+};
+
+const TaskItem = ({ task, onEdit, onDelete, isExpanded, onToggleExpansion }) => (
+  <div>
+    <div className="d-flex justify-content-between align-items-center">
+      <div>
+        <h5>{task.title}</h5>
+        <p className="mb-1">{task.description}</p>
+        <span className="badge bg-primary me-2">{task.status}</span>
+        <span className="badge bg-secondary me-2">{task.priority}</span>
+        <span className="badge bg-info me-2">{task.assignedTo}</span>
+        <span className="badge bg-warning">Due: {new Date(task.dueDate).toLocaleDateString()}</span>
+      </div>
+      <div>
+        <button className="btn btn-sm btn-outline-secondary me-2" onClick={onToggleExpansion}>
+          {isExpanded ? 'Collapse' : 'Expand'}
+        </button>
+        <button className="btn btn-sm btn-outline-primary me-2" onClick={() => onEdit(task)}>Edit</button>
+        <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(task.id)}>Delete</button>
+      </div>
+    </div>
+    {isExpanded && (
+      <div className="mt-3">
+        <h6>Subtasks:</h6>
+        <ul>
+          {task.subtasks.map((subtask, index) => (
+            <li key={index}>{subtask}</li>
+          ))}
+        </ul>
+        <h6>Related Tests:</h6>
+        <ul>
+          {task.relatedTests.map((test, index) => (
+            <li key={index}>{test}</li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </div>
+);
+
+const TaskEditForm = ({ task, onSave, onCancel }) => {
+  const [editedTask, setEditedTask] = useState(task);
+  const [newSubtask, setNewSubtask] = useState('');
+  const [newRelatedTest, setNewRelatedTest] = useState('');
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setEditedTask(prevTask => ({ ...prevTask, [name]: value }));
+  };
+
+  const handleDateChange = (date) => {
+    setEditedTask(prevTask => ({ ...prevTask, dueDate: date }));
+  };
+
+  const handleAddSubtask = () => {
+    if (newSubtask.trim() !== '') {
+      setEditedTask(prevTask => ({
+        ...prevTask,
+        subtasks: [...prevTask.subtasks, newSubtask.trim()]
+      }));
+      setNewSubtask('');
+    }
+  };
+
+  const handleAddRelatedTest = () => {
+    if (newRelatedTest.trim() !== '') {
+      setEditedTask(prevTask => ({
+        ...prevTask,
+        relatedTests: [...prevTask.relatedTests, newRelatedTest.trim()]
+      }));
+      setNewRelatedTest('');
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(editedTask);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className="mb-3">
+        <input
+          type="text"
+          className="form-control"
+          name="title"
+          value={editedTask.title}
+          onChange={handleChange}
+          placeholder="Task Title"
+          required
+        />
+      </div>
+      <div className="mb-3">
+        <textarea
+          className="form-control"
+          name="description"
+          value={editedTask.description}
+          onChange={handleChange}
+          placeholder="Task Description"
+        />
+      </div>
+      <div className="mb-3">
+        <select className="form-select" name="status" value={editedTask.status} onChange={handleChange}>
+          <option value="To-do">To-do</option>
+          <option value="In-progress">In-progress</option>
+          <option value="Done">Done</option>
+        </select>
+      </div>
+      <div className="mb-3">
+        <select className="form-select" name="priority" value={editedTask.priority} onChange={handleChange}>
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+        </select>
+      </div>
+      <div className="mb-3">
+        <select className="form-select" name="assignedTo" value={editedTask.assignedTo} onChange={handleChange}>
+          <option value="User">User</option>
+          <option value="AI">AI</option>
+        </select>
+      </div>
+      <div className="mb-3">
+        <DatePicker
+          selected={new Date(editedTask.dueDate)}
+          onChange={handleDateChange}
+          className="form-control"
+        />
+      </div>
+      <div className="mb-3">
+        <h6>Subtasks:</h6>
+        <ul>
+          {editedTask.subtasks.map((subtask, index) => (
+            <li key={index}>{subtask}</li>
+          ))}
+        </ul>
+        <div className="input-group">
+          <input
+            type="text"
+            className="form-control"
+            value={newSubtask}
+            onChange={(e) => setNewSubtask(e.target['value'])}
+            placeholder="New Subtask"
+          />
+          <button type="button" className="btn btn-outline-secondary" onClick={handleAddSubtask}>Add</button>
+        </div>
+      </div>
+      <div className="mb-3">
+        <h6>Related Tests:</h6>
+        <ul>
+          {editedTask.relatedTests.map((test, index) => (
+            <li key={index}>{test}</li>
+          ))}
+        </ul>
+        <div className="input-group">
+          <input
+            type="text"
+            className="form-control"
+            value={newRelatedTest}
+            onChange={(e) => setNewRelatedTest(e.target['value'])}
+            placeholder="New Related Test"
+          />
+          <button type="button" className="btn btn-outline-secondary" onClick={handleAddRelatedTest}>Add</button>
+        </div>
+      </div>
+      <button type="submit" className="btn btn-primary me-2">Save</button>
+      <button type="button" className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+    </form>
+  );
+};
+
+export default TaskView;
+/* ================================================================================ */
+ import React, { useState, useEffect, useRef } from 'react';
+// Import Bootstrap JS
+import 'bootstrap';
+import { useSharedContext } from '../hooks/useSharedContext';
+
+const TestView = () => {
+  
+  const [testState, updateTestState, vscode] = useSharedContext('testView');
+  const { tests } = testState || { tests: [] };
+
+  const [selectedTests, setSelectedTests] = useState([]);
+  const [editingTest, setEditingTest] = useState(null);
+
+  useEffect(() => {
+    const messageHandler = (event) => {
+      const message = event.data;
+      switch (message.command) {
+        case 'updateTests':
+          updateTestState(prevState => ({
+            ...prevState,
+            tests: message.tests
+          }));
+          break;
+        case 'testRunComplete':
+          updateTestState(prevState => ({
+            ...prevState,
+            tests: prevState.tests.map(test => 
+              message.results[test.id] ? { ...test, ...message.results[test.id] } : test
+            )
+          }));
+          break;
+      }
+    };
+
+    window.addEventListener('message', messageHandler);
+
+    // Initial load of tests
+    vscode.postMessage({ command: 'getTests' });
+
+    return () => {
+      window.removeEventListener('message', messageHandler);
+    };
+  }, []);
+
+  const handleAddTest = () => {
+    setEditingTest({ id: Date.now(), name: '', code: '' });
+  };
+
+  const handleEditTest = (test) => {
+    setEditingTest(test);
+  };
+
+  const handleDeleteTest = (testId) => {
+    vscode.postMessage({ command: 'deleteTest', testId });
+  };
+
+  const handleSaveTest = (test) => {
+    vscode.postMessage({ command: 'saveTest', test });
+    setEditingTest(null);
+  };
+
+  const handleRunTests = () => {
+    vscode.postMessage({ command: 'runTests', testIds: selectedTests.length ? selectedTests : 'all' });
+  };
+
+  const handleTestSelection = (testId) => {
+    setSelectedTests(prev => 
+      prev.includes(testId) ? prev.filter(id => id !== testId) : [...prev, testId]
+    );
+  };
+
+  return (
+    <div className="test-view container mt-4">
+      <h2 className="mb-4">Test View</h2>
+
+      <div className="mb-3">
+        <button className="btn btn-primary me-2" onClick={handleAddTest}>Add Test</button>
+        <button className="btn btn-success" onClick={handleRunTests}>
+          Run {selectedTests.length ? 'Selected' : 'All'} Tests
+        </button>
+      </div>
+
+      <div className="test-list">
+        {tests.map(test => (
+          <div key={test.id} className={`card mb-3 ${test.status === 'passed' ? 'border-success' : test.status === 'failed' ? 'border-danger' : ''}`}>
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center">
+                <h5 className="card-title">
+                  <input
+                    type="checkbox"
+                    checked={selectedTests.includes(test.id)}
+                    onChange={() => handleTestSelection(test.id)}
+                    className="me-2"
+                  />
+                  {test.name}
+                </h5>
+                <span className={`badge ${test.status === 'passed' ? 'bg-success' : test.status === 'failed' ? 'bg-danger' : 'bg-secondary'}`}>
+                  {test.status || 'Not Run'}
+                </span>
+              </div>
+              {test.status === 'failed' && (
+                <div className="mt-2">
+                  <strong>Error:</strong>
+                  <pre className="text-danger">{test.error}</pre>
+                  <strong>Stack Trace:</strong>
+                  <pre className="text-muted">{test.stackTrace}</pre>
+                </div>
+              )}
+              <div className="mt-2">
+                <button className="btn btn-sm btn-outline-primary me-2" onClick={() => handleEditTest(test)}>Edit</button>
+                <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteTest(test.id)}>Delete</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {editingTest && (
+        <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">{editingTest.id ? 'Edit Test' : 'Add Test'}</h5>
+                <button type="button" className="btn-close" onClick={() => setEditingTest(null)}></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label htmlFor="testName" className="form-label">Test Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="testName"
+                    value={editingTest.name}
+                    onChange={(e) => setEditingTest({...editingTest, name: e.target['value']})}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="testCode" className="form-label">Test Code</label>
+                  <textarea
+                    className="form-control"
+                    id="testCode"
+                    rows={5}
+                    value={editingTest.code}
+                    onChange={(e) => setEditingTest({...editingTest, code: e.target['value']})}
+                  ></textarea>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setEditingTest(null)}>Close</button>
+                <button type="button" className="btn btn-primary" onClick={() => handleSaveTest(editingTest)}>Save Test</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default TestView;
+/* ================================================================================ */
+ import React, { useState, useEffect, useRef } from 'react';
+// Import Bootstrap JS
+import 'bootstrap';
+import { useSharedContext } from '../hooks/useSharedContext';
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import { vs2015 } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+
+const VersionHistory = ({ versions, selectedVersions, onVersionSelect, onRevert, onViewDiff, onBack }) => {
+  return (
+    <div className="version-history">
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h4>Version History</h4>
+        <div>
+          <button
+            className="btn btn-primary me-2"
+            onClick={onViewDiff}
+            disabled={selectedVersions.length !== 2}
+          >
+            View Diff
+          </button>
+          <button className="btn btn-secondary" onClick={onBack}>Back</button>
+        </div>
+      </div>
+      <ul className="list-group">
+        {versions.map((version) => (
+          <li
+            key={version.version}
+            className={`list-group-item ${selectedVersions.includes(version.version) ? 'active' : ''}`}
+          >
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <input
+                  type="checkbox"
+                  checked={selectedVersions.includes(version.version)}
+                  onChange={() => onVersionSelect(version.version)}
+                  className="me-2"
+                />
+                {new Date(version.timestamp).toLocaleString()}
+              </div>
+              <button
+                className="btn btn-sm btn-outline-primary"
+                onClick={() => onRevert(version.version)}
+              >
+                Revert
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+const FileContent = ({ filePath, content, onBack }) => {
+  const getLanguage = (path) => {
+    const extension = path.split('.').pop().toLowerCase();
+    switch (extension) {
+      case 'js': return 'javascript';
+      case 'py': return 'python';
+      case 'html': return 'html';
+      case 'css': return 'css';
+      default: return 'text';
+    }
+  };
+
+  return (
+    <div className="file-content">
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h4>{filePath}</h4>
+        <button className="btn btn-secondary" onClick={onBack}>Back</button>
+      </div>
+      <SyntaxHighlighter language={getLanguage(filePath)} style={vs2015}>
+        {content}
+      </SyntaxHighlighter>
+    </div>
+  );
+};
+
+const FileTree = ({ fileSystem, onFileSelect }) => {
+  const renderTree = (tree, path = '') => {
+    return Object.entries(tree).map(([key, value]) => {
+      const fullPath = path ? `${path}/${key}` : key;
+      if (typeof value === 'object' && !value.content) {
+        // This is a directory
+        return (
+          <li key={fullPath} className="mb-2">
+            <span className="folder-name">{key}</span>
+            <ul className="list-unstyled ms-3">
+              {renderTree(value, fullPath)}
+            </ul>
+          </li>
+        );
+      } else {
+        // This is a file
+        return (
+          <li key={fullPath} className="mb-1">
+            <button
+              className="btn btn-link p-0 text-decoration-none"
+              onClick={() => onFileSelect(fullPath)}
+            >
+              {key}
+            </button>
+          </li>
+        );
+      }
+    });
+  };
+
+  return (
+    <div className="file-tree">
+      <ul className="list-unstyled">
+        {renderTree(fileSystem)}
+      </ul>
+    </div>
+  );
+};
+
+const VersionControlView = () => {
+  
+  const [versionControlState, updateVersionControlState, vscode] = useSharedContext('versionControlView');
+  const { fileSystem } = versionControlState || { fileSystem: {} };
+
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedVersions, setSelectedVersions] = useState([]);
+  const [viewMode, setViewMode] = useState('tree'); // 'tree', 'content', 'history'
+
+  const handleFileSelect = (filePath) => {
+    setSelectedFile(filePath);
+    setViewMode('content');
+  };
+
+  const handleVersionSelect = (version) => {
+    setSelectedVersions((prev) => {
+      if (prev.includes(version)) {
+        return prev.filter((v) => v !== version);
+      }
+      return [...prev.slice(-1), version]; // Keep at most 2 versions selected
+    });
+  };
+
+  const handleRevert = (version) => {
+    updateVersionControlState((prevState) => {
+      const fileVersions = prevState.fileSystem[selectedFile].versions;
+      const revertedContent = fileVersions.find((v) => v.version === version).content;
+      
+      return {
+        ...prevState,
+        fileSystem: {
+          ...prevState.fileSystem,
+          [selectedFile]: {
+            ...prevState.fileSystem[selectedFile],
+            content: revertedContent,
+            versions: [
+              {
+                version: Date.now(),
+                content: revertedContent,
+                timestamp: new Date().toISOString()
+              },
+              ...fileVersions
+            ]
+          }
+        }
+      };
+    });
+  };
+
+  const handleViewDiff = () => {
+    if (selectedVersions.length !== 2) return;
+
+    const [oldVersion, newVersion] = selectedVersions.map(version => 
+      fileSystem[selectedFile].versions.find(v => v.version === version)
+    );
+
+    vscode.postMessage({
+      command: 'viewDiff',
+      oldVersion: {
+        content: oldVersion.content,
+        fileName: `${selectedFile} (${new Date(oldVersion.timestamp).toLocaleString()})`,
+      },
+      newVersion: {
+        content: newVersion.content,
+        fileName: `${selectedFile} (${new Date(newVersion.timestamp).toLocaleString()})`,
+      },
+    });
+  };
+
+  const renderContent = () => {
+    switch (viewMode) {
+      case 'content':
+        return (
+          <FileContent
+            filePath={selectedFile}
+            content={fileSystem[selectedFile]?.content}
+            onBack={() => setViewMode('tree')}
+          />
+        );
+      case 'history':
+        return (
+          <VersionHistory
+            versions={fileSystem[selectedFile]?.versions || []}
+            selectedVersions={selectedVersions}
+            onVersionSelect={handleVersionSelect}
+            onRevert={handleRevert}
+            onViewDiff={handleViewDiff}
+            onBack={() => setViewMode('content')}
+          />
+        );
+      default:
+        return (
+          <FileTree
+            fileSystem={fileSystem}
+            onFileSelect={handleFileSelect}
+          />
+        );
+    }
+  };
+
+  return (
+    <div className="version-control-view container mt-4">
+      <h2 className="mb-4">Version Control</h2>
+      {renderContent()}
+    </div>
+  );
+};
+
+export default VersionControlView;
+/* ================================================================================ */
 export const initialState = {
     stateVersion: "1",
     projectView: {
@@ -319,6 +1289,9 @@ export const initialState = {
     },
     testView: {
       tests: []
+    },
+    taskView: {
+      tasks: []
     }
     // Add any other initial state properties here
   };
@@ -366,6 +1339,9 @@ export const initialState = {
     color: var(--vscode-button-secondaryForeground);
   }
 /* ================================================================================ */
+.react-datepicker__year-read-view--down-arrow,.react-datepicker__month-read-view--down-arrow,.react-datepicker__month-year-read-view--down-arrow,.react-datepicker__navigation-icon::before{border-color:#ccc;border-style:solid;border-width:3px 3px 0 0;content:"";display:block;height:9px;position:absolute;top:6px;width:9px}.react-datepicker-wrapper{display:inline-block;padding:0;border:0}.react-datepicker{font-family:"Helvetica Neue",helvetica,arial,sans-serif;font-size:.8rem;background-color:#fff;color:#000;border:1px solid #aeaeae;border-radius:.3rem;display:inline-block;position:relative;line-height:initial}.react-datepicker--time-only .react-datepicker__time-container{border-left:0}.react-datepicker--time-only .react-datepicker__time,.react-datepicker--time-only .react-datepicker__time-box{border-bottom-left-radius:.3rem;border-bottom-right-radius:.3rem}.react-datepicker-popper{z-index:1;line-height:0}.react-datepicker-popper .react-datepicker__triangle{stroke:#aeaeae}.react-datepicker-popper[data-placement^=bottom] .react-datepicker__triangle{fill:#f0f0f0;color:#f0f0f0}.react-datepicker-popper[data-placement^=top] .react-datepicker__triangle{fill:#fff;color:#fff}.react-datepicker__header{text-align:center;background-color:#f0f0f0;border-bottom:1px solid #aeaeae;border-top-left-radius:.3rem;padding:8px 0;position:relative}.react-datepicker__header--time{padding-bottom:8px;padding-left:5px;padding-right:5px}.react-datepicker__header--time:not(.react-datepicker__header--time--only){border-top-left-radius:0}.react-datepicker__header:not(.react-datepicker__header--has-time-select){border-top-right-radius:.3rem}.react-datepicker__year-dropdown-container--select,.react-datepicker__month-dropdown-container--select,.react-datepicker__month-year-dropdown-container--select,.react-datepicker__year-dropdown-container--scroll,.react-datepicker__month-dropdown-container--scroll,.react-datepicker__month-year-dropdown-container--scroll{display:inline-block;margin:0 15px}.react-datepicker__current-month,.react-datepicker-time__header,.react-datepicker-year-header{margin-top:0;color:#000;font-weight:bold;font-size:.944rem}h2.react-datepicker__current-month{padding:0;margin:0}.react-datepicker-time__header{text-overflow:ellipsis;white-space:nowrap;overflow:hidden}.react-datepicker__navigation{align-items:center;background:none;display:flex;justify-content:center;text-align:center;cursor:pointer;position:absolute;top:2px;padding:0;border:none;z-index:1;height:32px;width:32px;text-indent:-999em;overflow:hidden}.react-datepicker__navigation--previous{left:2px}.react-datepicker__navigation--next{right:2px}.react-datepicker__navigation--next--with-time:not(.react-datepicker__navigation--next--with-today-button){right:85px}.react-datepicker__navigation--years{position:relative;top:0;display:block;margin-left:auto;margin-right:auto}.react-datepicker__navigation--years-previous{top:4px}.react-datepicker__navigation--years-upcoming{top:-4px}.react-datepicker__navigation:hover *::before{border-color:#a6a6a6}.react-datepicker__navigation-icon{position:relative;top:-1px;font-size:20px;width:0}.react-datepicker__navigation-icon--next{left:-2px}.react-datepicker__navigation-icon--next::before{transform:rotate(45deg);left:-7px}.react-datepicker__navigation-icon--previous{right:-2px}.react-datepicker__navigation-icon--previous::before{transform:rotate(225deg);right:-7px}.react-datepicker__month-container{float:left}.react-datepicker__year{margin:.4rem;text-align:center}.react-datepicker__year-wrapper{display:flex;flex-wrap:wrap;max-width:180px}.react-datepicker__year .react-datepicker__year-text{display:inline-block;width:4rem;margin:2px}.react-datepicker__month{margin:.4rem;text-align:center}.react-datepicker__month .react-datepicker__month-text,.react-datepicker__month .react-datepicker__quarter-text{display:inline-block;width:4rem;margin:2px}.react-datepicker__input-time-container{clear:both;width:100%;float:left;margin:5px 0 10px 15px;text-align:left}.react-datepicker__input-time-container .react-datepicker-time__caption{display:inline-block}.react-datepicker__input-time-container .react-datepicker-time__input-container{display:inline-block}.react-datepicker__input-time-container .react-datepicker-time__input-container .react-datepicker-time__input{display:inline-block;margin-left:10px}.react-datepicker__input-time-container .react-datepicker-time__input-container .react-datepicker-time__input input{width:auto}.react-datepicker__input-time-container .react-datepicker-time__input-container .react-datepicker-time__input input[type=time]::-webkit-inner-spin-button,.react-datepicker__input-time-container .react-datepicker-time__input-container .react-datepicker-time__input input[type=time]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.react-datepicker__input-time-container .react-datepicker-time__input-container .react-datepicker-time__input input[type=time]{-moz-appearance:textfield}.react-datepicker__input-time-container .react-datepicker-time__input-container .react-datepicker-time__delimiter{margin-left:5px;display:inline-block}.react-datepicker__time-container{float:right;border-left:1px solid #aeaeae;width:85px}.react-datepicker__time-container--with-today-button{display:inline;border:1px solid #aeaeae;border-radius:.3rem;position:absolute;right:-87px;top:0}.react-datepicker__time-container .react-datepicker__time{position:relative;background:#fff;border-bottom-right-radius:.3rem}.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box{width:85px;overflow-x:hidden;margin:0 auto;text-align:center;border-bottom-right-radius:.3rem}.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list{list-style:none;margin:0;height:calc(195px + 1.7rem/2);overflow-y:scroll;padding-right:0;padding-left:0;width:100%;box-sizing:content-box}.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item{height:30px;padding:5px 10px;white-space:nowrap}.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item:hover{cursor:pointer;background-color:#f0f0f0}.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item--selected{background-color:#216ba5;color:#fff;font-weight:bold}.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item--selected:hover{background-color:#216ba5}.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item--disabled{color:#ccc}.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item--disabled:hover{cursor:default;background-color:rgba(0,0,0,0)}.react-datepicker__week-number{color:#ccc;display:inline-block;width:1.7rem;line-height:1.7rem;text-align:center;margin:.166rem}.react-datepicker__week-number.react-datepicker__week-number--clickable{cursor:pointer}.react-datepicker__week-number.react-datepicker__week-number--clickable:not(.react-datepicker__week-number--selected,.react-datepicker__week-number--keyboard-selected):hover{border-radius:.3rem;background-color:#f0f0f0}.react-datepicker__week-number--selected{border-radius:.3rem;background-color:#216ba5;color:#fff}.react-datepicker__week-number--selected:hover{background-color:#1d5d90}.react-datepicker__week-number--keyboard-selected{border-radius:.3rem;background-color:#2a87d0;color:#fff}.react-datepicker__week-number--keyboard-selected:hover{background-color:#1d5d90}.react-datepicker__day-names{white-space:nowrap;margin-bottom:-8px}.react-datepicker__week{white-space:nowrap}.react-datepicker__day-name,.react-datepicker__day,.react-datepicker__time-name{color:#000;display:inline-block;width:1.7rem;line-height:1.7rem;text-align:center;margin:.166rem}.react-datepicker__day,.react-datepicker__month-text,.react-datepicker__quarter-text,.react-datepicker__year-text{cursor:pointer}.react-datepicker__day:hover,.react-datepicker__month-text:hover,.react-datepicker__quarter-text:hover,.react-datepicker__year-text:hover{border-radius:.3rem;background-color:#f0f0f0}.react-datepicker__day--today,.react-datepicker__month-text--today,.react-datepicker__quarter-text--today,.react-datepicker__year-text--today{font-weight:bold}.react-datepicker__day--highlighted,.react-datepicker__month-text--highlighted,.react-datepicker__quarter-text--highlighted,.react-datepicker__year-text--highlighted{border-radius:.3rem;background-color:#3dcc4a;color:#fff}.react-datepicker__day--highlighted:hover,.react-datepicker__month-text--highlighted:hover,.react-datepicker__quarter-text--highlighted:hover,.react-datepicker__year-text--highlighted:hover{background-color:#32be3f}.react-datepicker__day--highlighted-custom-1,.react-datepicker__month-text--highlighted-custom-1,.react-datepicker__quarter-text--highlighted-custom-1,.react-datepicker__year-text--highlighted-custom-1{color:#f0f}.react-datepicker__day--highlighted-custom-2,.react-datepicker__month-text--highlighted-custom-2,.react-datepicker__quarter-text--highlighted-custom-2,.react-datepicker__year-text--highlighted-custom-2{color:green}.react-datepicker__day--holidays,.react-datepicker__month-text--holidays,.react-datepicker__quarter-text--holidays,.react-datepicker__year-text--holidays{position:relative;border-radius:.3rem;background-color:#ff6803;color:#fff}.react-datepicker__day--holidays .overlay,.react-datepicker__month-text--holidays .overlay,.react-datepicker__quarter-text--holidays .overlay,.react-datepicker__year-text--holidays .overlay{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background-color:#333;color:#fff;padding:4px;border-radius:4px;white-space:nowrap;visibility:hidden;opacity:0;transition:visibility 0s,opacity .3s ease-in-out}.react-datepicker__day--holidays:hover,.react-datepicker__month-text--holidays:hover,.react-datepicker__quarter-text--holidays:hover,.react-datepicker__year-text--holidays:hover{background-color:#cf5300}.react-datepicker__day--holidays:hover .overlay,.react-datepicker__month-text--holidays:hover .overlay,.react-datepicker__quarter-text--holidays:hover .overlay,.react-datepicker__year-text--holidays:hover .overlay{visibility:visible;opacity:1}.react-datepicker__day--selected,.react-datepicker__day--in-selecting-range,.react-datepicker__day--in-range,.react-datepicker__month-text--selected,.react-datepicker__month-text--in-selecting-range,.react-datepicker__month-text--in-range,.react-datepicker__quarter-text--selected,.react-datepicker__quarter-text--in-selecting-range,.react-datepicker__quarter-text--in-range,.react-datepicker__year-text--selected,.react-datepicker__year-text--in-selecting-range,.react-datepicker__year-text--in-range{border-radius:.3rem;background-color:#216ba5;color:#fff}.react-datepicker__day--selected:hover,.react-datepicker__day--in-selecting-range:hover,.react-datepicker__day--in-range:hover,.react-datepicker__month-text--selected:hover,.react-datepicker__month-text--in-selecting-range:hover,.react-datepicker__month-text--in-range:hover,.react-datepicker__quarter-text--selected:hover,.react-datepicker__quarter-text--in-selecting-range:hover,.react-datepicker__quarter-text--in-range:hover,.react-datepicker__year-text--selected:hover,.react-datepicker__year-text--in-selecting-range:hover,.react-datepicker__year-text--in-range:hover{background-color:#1d5d90}.react-datepicker__day--keyboard-selected,.react-datepicker__month-text--keyboard-selected,.react-datepicker__quarter-text--keyboard-selected,.react-datepicker__year-text--keyboard-selected{border-radius:.3rem;background-color:#bad9f1;color:#000}.react-datepicker__day--keyboard-selected:hover,.react-datepicker__month-text--keyboard-selected:hover,.react-datepicker__quarter-text--keyboard-selected:hover,.react-datepicker__year-text--keyboard-selected:hover{background-color:#1d5d90}.react-datepicker__day--in-selecting-range:not(.react-datepicker__day--in-range,.react-datepicker__month-text--in-range,.react-datepicker__quarter-text--in-range,.react-datepicker__year-text--in-range),.react-datepicker__month-text--in-selecting-range:not(.react-datepicker__day--in-range,.react-datepicker__month-text--in-range,.react-datepicker__quarter-text--in-range,.react-datepicker__year-text--in-range),.react-datepicker__quarter-text--in-selecting-range:not(.react-datepicker__day--in-range,.react-datepicker__month-text--in-range,.react-datepicker__quarter-text--in-range,.react-datepicker__year-text--in-range),.react-datepicker__year-text--in-selecting-range:not(.react-datepicker__day--in-range,.react-datepicker__month-text--in-range,.react-datepicker__quarter-text--in-range,.react-datepicker__year-text--in-range){background-color:rgba(33,107,165,.5)}.react-datepicker__month--selecting-range .react-datepicker__day--in-range:not(.react-datepicker__day--in-selecting-range,.react-datepicker__month-text--in-selecting-range,.react-datepicker__quarter-text--in-selecting-range,.react-datepicker__year-text--in-selecting-range),.react-datepicker__year--selecting-range .react-datepicker__day--in-range:not(.react-datepicker__day--in-selecting-range,.react-datepicker__month-text--in-selecting-range,.react-datepicker__quarter-text--in-selecting-range,.react-datepicker__year-text--in-selecting-range),.react-datepicker__month--selecting-range .react-datepicker__month-text--in-range:not(.react-datepicker__day--in-selecting-range,.react-datepicker__month-text--in-selecting-range,.react-datepicker__quarter-text--in-selecting-range,.react-datepicker__year-text--in-selecting-range),.react-datepicker__year--selecting-range .react-datepicker__month-text--in-range:not(.react-datepicker__day--in-selecting-range,.react-datepicker__month-text--in-selecting-range,.react-datepicker__quarter-text--in-selecting-range,.react-datepicker__year-text--in-selecting-range),.react-datepicker__month--selecting-range .react-datepicker__quarter-text--in-range:not(.react-datepicker__day--in-selecting-range,.react-datepicker__month-text--in-selecting-range,.react-datepicker__quarter-text--in-selecting-range,.react-datepicker__year-text--in-selecting-range),.react-datepicker__year--selecting-range .react-datepicker__quarter-text--in-range:not(.react-datepicker__day--in-selecting-range,.react-datepicker__month-text--in-selecting-range,.react-datepicker__quarter-text--in-selecting-range,.react-datepicker__year-text--in-selecting-range),.react-datepicker__month--selecting-range .react-datepicker__year-text--in-range:not(.react-datepicker__day--in-selecting-range,.react-datepicker__month-text--in-selecting-range,.react-datepicker__quarter-text--in-selecting-range,.react-datepicker__year-text--in-selecting-range),.react-datepicker__year--selecting-range .react-datepicker__year-text--in-range:not(.react-datepicker__day--in-selecting-range,.react-datepicker__month-text--in-selecting-range,.react-datepicker__quarter-text--in-selecting-range,.react-datepicker__year-text--in-selecting-range){background-color:#f0f0f0;color:#000}.react-datepicker__day--disabled,.react-datepicker__month-text--disabled,.react-datepicker__quarter-text--disabled,.react-datepicker__year-text--disabled{cursor:default;color:#ccc}.react-datepicker__day--disabled:hover,.react-datepicker__month-text--disabled:hover,.react-datepicker__quarter-text--disabled:hover,.react-datepicker__year-text--disabled:hover{background-color:rgba(0,0,0,0)}.react-datepicker__day--disabled .overlay,.react-datepicker__month-text--disabled .overlay,.react-datepicker__quarter-text--disabled .overlay,.react-datepicker__year-text--disabled .overlay{position:absolute;bottom:70%;left:50%;transform:translateX(-50%);background-color:#333;color:#fff;padding:4px;border-radius:4px;white-space:nowrap;visibility:hidden;opacity:0;transition:visibility 0s,opacity .3s ease-in-out}.react-datepicker__input-container{position:relative;display:inline-block;width:100%}.react-datepicker__input-container .react-datepicker__calendar-icon{position:absolute;padding:.5rem;box-sizing:content-box}.react-datepicker__view-calendar-icon input{padding:6px 10px 5px 25px}.react-datepicker__year-read-view,.react-datepicker__month-read-view,.react-datepicker__month-year-read-view{border:1px solid rgba(0,0,0,0);border-radius:.3rem;position:relative}.react-datepicker__year-read-view:hover,.react-datepicker__month-read-view:hover,.react-datepicker__month-year-read-view:hover{cursor:pointer}.react-datepicker__year-read-view:hover .react-datepicker__year-read-view--down-arrow,.react-datepicker__year-read-view:hover .react-datepicker__month-read-view--down-arrow,.react-datepicker__month-read-view:hover .react-datepicker__year-read-view--down-arrow,.react-datepicker__month-read-view:hover .react-datepicker__month-read-view--down-arrow,.react-datepicker__month-year-read-view:hover .react-datepicker__year-read-view--down-arrow,.react-datepicker__month-year-read-view:hover .react-datepicker__month-read-view--down-arrow{border-top-color:#b3b3b3}.react-datepicker__year-read-view--down-arrow,.react-datepicker__month-read-view--down-arrow,.react-datepicker__month-year-read-view--down-arrow{transform:rotate(135deg);right:-16px;top:0}.react-datepicker__year-dropdown,.react-datepicker__month-dropdown,.react-datepicker__month-year-dropdown{background-color:#f0f0f0;position:absolute;width:50%;left:25%;top:30px;z-index:1;text-align:center;border-radius:.3rem;border:1px solid #aeaeae}.react-datepicker__year-dropdown:hover,.react-datepicker__month-dropdown:hover,.react-datepicker__month-year-dropdown:hover{cursor:pointer}.react-datepicker__year-dropdown--scrollable,.react-datepicker__month-dropdown--scrollable,.react-datepicker__month-year-dropdown--scrollable{height:150px;overflow-y:scroll}.react-datepicker__year-option,.react-datepicker__month-option,.react-datepicker__month-year-option{line-height:20px;width:100%;display:block;margin-left:auto;margin-right:auto}.react-datepicker__year-option:first-of-type,.react-datepicker__month-option:first-of-type,.react-datepicker__month-year-option:first-of-type{border-top-left-radius:.3rem;border-top-right-radius:.3rem}.react-datepicker__year-option:last-of-type,.react-datepicker__month-option:last-of-type,.react-datepicker__month-year-option:last-of-type{-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;border-bottom-left-radius:.3rem;border-bottom-right-radius:.3rem}.react-datepicker__year-option:hover,.react-datepicker__month-option:hover,.react-datepicker__month-year-option:hover{background-color:#ccc}.react-datepicker__year-option:hover .react-datepicker__navigation--years-upcoming,.react-datepicker__month-option:hover .react-datepicker__navigation--years-upcoming,.react-datepicker__month-year-option:hover .react-datepicker__navigation--years-upcoming{border-bottom-color:#b3b3b3}.react-datepicker__year-option:hover .react-datepicker__navigation--years-previous,.react-datepicker__month-option:hover .react-datepicker__navigation--years-previous,.react-datepicker__month-year-option:hover .react-datepicker__navigation--years-previous{border-top-color:#b3b3b3}.react-datepicker__year-option--selected,.react-datepicker__month-option--selected,.react-datepicker__month-year-option--selected{position:absolute;left:15px}.react-datepicker__close-icon{cursor:pointer;background-color:rgba(0,0,0,0);border:0;outline:0;padding:0 6px 0 0;position:absolute;top:0;right:0;height:100%;display:table-cell;vertical-align:middle}.react-datepicker__close-icon::after{cursor:pointer;background-color:#216ba5;color:#fff;border-radius:50%;height:16px;width:16px;padding:2px;font-size:12px;line-height:1;text-align:center;display:table-cell;vertical-align:middle;content:"×"}.react-datepicker__close-icon--disabled{cursor:default}.react-datepicker__close-icon--disabled::after{cursor:default;background-color:#ccc}.react-datepicker__today-button{background:#f0f0f0;border-top:1px solid #aeaeae;cursor:pointer;text-align:center;font-weight:bold;padding:5px 0;clear:left}.react-datepicker__portal{position:fixed;width:100vw;height:100vh;background-color:rgba(0,0,0,.8);left:0;top:0;justify-content:center;align-items:center;display:flex;z-index:2147483647}.react-datepicker__portal .react-datepicker__day-name,.react-datepicker__portal .react-datepicker__day,.react-datepicker__portal .react-datepicker__time-name{width:3rem;line-height:3rem}@media(max-width: 400px),(max-height: 550px){.react-datepicker__portal .react-datepicker__day-name,.react-datepicker__portal .react-datepicker__day,.react-datepicker__portal .react-datepicker__time-name{width:2rem;line-height:2rem}}.react-datepicker__portal .react-datepicker__current-month,.react-datepicker__portal .react-datepicker-time__header{font-size:1.44rem}.react-datepicker__children-container{width:13.8rem;margin:.4rem;padding-right:.2rem;padding-left:.2rem;height:auto}.react-datepicker__aria-live{position:absolute;clip-path:circle(0);border:0;height:1px;margin:-1px;overflow:hidden;padding:0;width:1px;white-space:nowrap}.react-datepicker__calendar-icon{width:1em;height:1em;vertical-align:-0.125em}
+
+/* ================================================================================ */
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
@@ -373,6 +1349,10 @@ import EnhancedZenObservable from './observables/EnhancedZenObservable';
 import { ChatViewProvider } from './providers/ChatViewProvider';
 import { ProjectViewProvider } from './providers/ProjectViewProvider';
 import { SettingsViewProvider } from './providers/SettingsViewProvider';
+import { TestViewProvider } from './providers/TestViewProvider';
+import { TaskViewProvider } from './providers/TaskViewProvider';
+import { VersionControlViewProvider } from './providers/VersionControlViewProvider';
+import { OrchestratorControlViewProvider } from './providers/OrchestratorControlViewProvider';
 import { FileSystemUtils } from './utils/FileSystemUtils';
 
 const fileSystemUtils = new FileSystemUtils();
@@ -405,6 +1385,22 @@ export async function activate(context: vscode.ExtensionContext) {
     const chatProvider = new ChatViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
 
     vscode.window.registerWebviewViewProvider('orchestraChatView', chatProvider);
+
+    const testProvider = new TestViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
+
+    vscode.window.registerWebviewViewProvider('orchestraTestView', testProvider);
+
+    const taskProvider = new TaskViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
+
+    vscode.window.registerWebviewViewProvider('orchestraTaskView', taskProvider);
+
+    const versionControlProvider = new VersionControlViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
+
+    vscode.window.registerWebviewViewProvider('orchestraVersionControlView', versionControlProvider);
+
+    const orchestratorControlProvider = new OrchestratorControlViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
+
+    vscode.window.registerWebviewViewProvider('orchestraOrchestratorControlView', orchestratorControlProvider);
 
     // vscode.window.registerTreeDataProvider('orchestraActivityView', provider);
 
@@ -791,6 +1787,7 @@ export default EnhancedZenObservable;
 import * as vscode from 'vscode';
 import EnhancedZenObservable from '../observables/EnhancedZenObservable';
 import { setupWebviewMessageHandler } from '../utils/webviewUtils';
+import axios from 'axios';
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'orchestra-ai.chatView';
@@ -820,8 +1817,79 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         const html = this._getHtmlForWebview(webviewView.webview);
         vscode.window.showInformationMessage(html);
         webviewView.webview.html = html;
+
+        async function handleWebviewMessage(message: any) {
+            switch (message.command) {
+              case 'getAvailableModels':
+                const models = await vscode.lm.selectChatModels({ vendor: 'copilot' });
+                webviewView.webview.postMessage({ command: 'availableModels', models });
+                break;
+          
+              case 'sendMessage':
+                if (message.useLocalApi) {
+                  sendMessageToLocalApi(message.message, message.localApiEndpoint, message.context);
+                } else {
+                  sendMessageToVSCodeApi(message.message, message.model, message.context);
+                }
+                break;
+          
+              case 'getActiveEditorContent':
+                const editor = vscode.window.activeTextEditor;
+                if (editor) {
+                  const content = editor.document.getText();
+                  webviewView.webview.postMessage({ command: 'appendResponse', content: `Active editor content set as context: ${content.substring(0, 100)}...` });
+                } else {
+                  webviewView.webview.postMessage({ command: 'error', error: 'No active editor' });
+                }
+                break;
+            }
+          }
+          
+          async function sendMessageToVSCodeApi(message: string, modelId: string, context: string) {
+            try {
+              const [model] = await vscode.lm.selectChatModels({ id: modelId });
+              if (!model) {
+                webviewView.webview.postMessage({ command: 'error', error: 'Selected model not available' });
+                return;
+              }
+          
+              const craftedPrompt = [
+                vscode.LanguageModelChatMessage.User(context),
+                vscode.LanguageModelChatMessage.User(message)
+              ];
+          
+              const response = await model.sendRequest(craftedPrompt, {}, new vscode.CancellationTokenSource().token);
+          
+              for await (const fragment of response.text) {
+                webviewView.webview.postMessage({ command: 'appendResponse', content: fragment });
+              }
+            } catch (err) {
+              if (err instanceof vscode.LanguageModelError) {
+                webviewView.webview.postMessage({ command: 'error', error: `${err.message} (${err.code})` });
+              } else {
+                webviewView.webview.postMessage({ command: 'error', error: 'An unexpected error occurred' });
+              }
+            }
+          }
+          
+          async function sendMessageToLocalApi(message: string, apiEndpoint: string, context: string) {
+            try {
+              const response = await axios.post(apiEndpoint, {
+                message: message,
+                context: context
+              });
+          
+              if (response.data && response.data.response) {
+                webviewView.webview.postMessage({ command: 'appendResponse', content: response.data.response });
+              } else {
+                throw new Error('Invalid response from local API');
+              }
+            } catch (error) {
+              webviewView.webview.postMessage({ command: 'error', error: `Error calling local API: ${error.message}` });
+            }
+          }
         
-        setupWebviewMessageHandler(webviewView, this._subscriptions, this._sharedObservable);
+        setupWebviewMessageHandler(webviewView, this._subscriptions, this._sharedObservable, handleWebviewMessage);
     }
 
     private _getHtmlForWebview(webview: vscode.Webview): string {
@@ -837,6 +1905,72 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Orchestra AI Chat View</title>
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src ${webview.cspSource};">
+                <link href="${bootstrapUri}" rel="stylesheet">
+                <link href="${customStylesUri}" rel="stylesheet">
+            </head>
+            <body>
+                <div id="root"></div>
+                <script src="${scriptUri}"></script>
+            </body>
+            </html>
+        `;
+    }
+}
+/* ================================================================================ */
+import * as vscode from 'vscode';
+import EnhancedZenObservable from '../observables/EnhancedZenObservable';
+import { setupWebviewMessageHandler } from '../utils/webviewUtils';
+
+export class OrchestratorControlViewProvider implements vscode.WebviewViewProvider {
+    public static readonly viewType = 'orchestra-ai.orchestratorControlView';
+
+    private _view?: vscode.WebviewView;
+
+    constructor(
+        private readonly _extensionUri: vscode.Uri,
+        private readonly _subscriptions: vscode.Disposable[],
+        private readonly _sharedObservable: EnhancedZenObservable,
+    ) { }
+
+    public resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        context: vscode.WebviewViewResolveContext,
+        _token: vscode.CancellationToken,
+    ) {
+        this._view = webviewView;
+
+        webviewView.webview.options = {
+            enableScripts: true,
+            // Make sure to update the local resource roots to allow access to your dist folder
+            localResourceRoots: [vscode.Uri.joinPath(this._extensionUri, 'dist')]
+        };
+
+        // Set the HTML content of the webview, which includes the reference to your projectView.js script
+        const html = this._getHtmlForWebview(webviewView.webview);
+        vscode.window.showInformationMessage(html);
+        webviewView.webview.html = html;
+
+        async function handleWebviewMessage(message: any) {
+            
+        }
+        
+        setupWebviewMessageHandler(webviewView, this._subscriptions, this._sharedObservable, handleWebviewMessage);
+    }
+
+    private _getHtmlForWebview(webview: vscode.Webview): string {
+        // Construct the URI for the bundled versionControlView.js script
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', 'orchestratorControlView.js'));
+        vscode.window.showInformationMessage(scriptUri.toString());
+        const bootstrapUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', "css", 'bootstrap.min.css'));
+        const customStylesUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', "css", 'custom.css'));
+        return `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Orchestra AI Orchestrator Control View</title>
                 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src ${webview.cspSource};">
                 <link href="${bootstrapUri}" rel="stylesheet">
                 <link href="${customStylesUri}" rel="stylesheet">
@@ -961,6 +2095,331 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Orchestra AI Settings View</title>
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src ${webview.cspSource};">
+                <link href="${bootstrapUri}" rel="stylesheet">
+                <link href="${customStylesUri}" rel="stylesheet">
+            </head>
+            <body>
+                <div id="root"></div>
+                <script src="${scriptUri}"></script>
+            </body>
+            </html>
+        `;
+    }
+}
+/* ================================================================================ */
+import * as vscode from 'vscode';
+import EnhancedZenObservable from '../observables/EnhancedZenObservable';
+import { setupWebviewMessageHandler } from '../utils/webviewUtils';
+import path from 'path';
+
+export class TaskViewProvider implements vscode.WebviewViewProvider {
+    public static readonly viewType = 'orchestra-ai.taskView';
+
+    private _view?: vscode.WebviewView;
+
+    constructor(
+        private readonly _extensionUri: vscode.Uri,
+        private readonly _subscriptions: vscode.Disposable[],
+        private readonly _sharedObservable: EnhancedZenObservable,
+    ) { }
+
+    public resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        context: vscode.WebviewViewResolveContext,
+        _token: vscode.CancellationToken,
+    ) {
+        this._view = webviewView;
+
+        webviewView.webview.options = {
+            enableScripts: true,
+            // Make sure to update the local resource roots to allow access to your dist folder
+            localResourceRoots: [vscode.Uri.joinPath(this._extensionUri, 'dist')]
+        };
+
+        // Set the HTML content of the webview, which includes the reference to your projectView.js script
+        const html = this._getHtmlForWebview(webviewView.webview);
+        vscode.window.showInformationMessage(html);
+        webviewView.webview.html = html;
+
+        async function handleWebviewMessage(message: any) {
+          
+        }
+        
+        setupWebviewMessageHandler(webviewView, this._subscriptions, this._sharedObservable, handleWebviewMessage);
+    }
+
+    private _getHtmlForWebview(webview: vscode.Webview): string {
+        // Construct the URI for the bundled taskView.js script
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', 'taskView.js'));
+        vscode.window.showInformationMessage(scriptUri.toString());
+        const bootstrapUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', "css", 'bootstrap.min.css'));
+        const datepickerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', "css", 'react-datepicker.min.css'));
+        const customStylesUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', "css", 'custom.css'));
+        return `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Orchestra AI Task View</title>
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src ${webview.cspSource};">
+                <link href="${bootstrapUri}" rel="stylesheet">
+                <link href="${customStylesUri}" rel="stylesheet">
+                <link href="${datepickerUri}" rel="stylesheet">
+            </head>
+            <body>
+                <div id="root"></div>
+                <script src="${scriptUri}"></script>
+            </body>
+            </html>
+        `;
+    }
+}
+/* ================================================================================ */
+import * as vscode from 'vscode';
+import EnhancedZenObservable from '../observables/EnhancedZenObservable';
+import { setupWebviewMessageHandler } from '../utils/webviewUtils';
+import path from 'path';
+
+export class TestViewProvider implements vscode.WebviewViewProvider {
+    public static readonly viewType = 'orchestra-ai.testView';
+
+    private _view?: vscode.WebviewView;
+
+    constructor(
+        private readonly _extensionUri: vscode.Uri,
+        private readonly _subscriptions: vscode.Disposable[],
+        private readonly _sharedObservable: EnhancedZenObservable,
+    ) { }
+
+    public resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        context: vscode.WebviewViewResolveContext,
+        _token: vscode.CancellationToken,
+    ) {
+        this._view = webviewView;
+
+        webviewView.webview.options = {
+            enableScripts: true,
+            // Make sure to update the local resource roots to allow access to your dist folder
+            localResourceRoots: [vscode.Uri.joinPath(this._extensionUri, 'dist')]
+        };
+
+        // Set the HTML content of the webview, which includes the reference to your projectView.js script
+        const html = this._getHtmlForWebview(webviewView.webview);
+        vscode.window.showInformationMessage(html);
+        webviewView.webview.html = html;
+
+        async function handleWebviewMessage(message: any) {
+          switch (message.command) {
+            case 'getTests':
+              const tests = await loadTests();
+              webviewView.webview.postMessage({ command: 'updateTests', tests });
+              break;
+            case 'saveTest':
+              await saveTest(message.test);
+              const updatedTests = await loadTests();
+              webviewView.webview.postMessage({ command: 'updateTests', tests: updatedTests });
+              break;
+            case 'deleteTest':
+              await deleteTest(message.testId);
+              const remainingTests = await loadTests();
+              webviewView.webview.postMessage({ command: 'updateTests', tests: remainingTests });
+              break;
+            case 'runTests':
+              const results = await runTests(message.testIds);
+              webviewView.webview.postMessage({ command: 'testRunComplete', results });
+              break;
+          }
+        }
+        
+        async function loadTests(): Promise<any[]> {
+          const testFolderPath = getTestFolderPath();
+          const testFiles = await vscode.workspace.findFiles(new vscode.RelativePattern(testFolderPath, '*.test.js'));
+          
+          return Promise.all(testFiles.map(async file => {
+            const content = await vscode.workspace.fs.readFile(file);
+            return {
+              id: path.basename(file.path),
+              name: path.basename(file.path, '.test.js'),
+              code: content.toString(),
+              status: 'not run'
+            };
+          }));
+        }
+        
+        async function saveTest(test: any) {
+          const testFolderPath = getTestFolderPath();
+          const testFilePath = path.join(testFolderPath, `${test.name}.test.js`);
+          await vscode.workspace.fs.writeFile(vscode.Uri.file(testFilePath), Buffer.from(test.code));
+        }
+        
+        async function deleteTest(testId: string) {
+          const testFolderPath = getTestFolderPath();
+          const testFilePath = path.join(testFolderPath, testId);
+          await vscode.workspace.fs.delete(vscode.Uri.file(testFilePath));
+        }
+        
+        async function runTests(testIds: string[] | 'all'): Promise<Record<string, any>> {
+          const testFolderPath = getTestFolderPath();
+          const testFiles = testIds === 'all' 
+            ? await vscode.workspace.findFiles(new vscode.RelativePattern(testFolderPath, '*.test.js'))
+            : testIds.map(id => vscode.Uri.file(path.join(testFolderPath, id)));
+        
+          const results: Record<string, any> = {};
+        
+          for (const file of testFiles) {
+            try {
+              // In a real scenario, you would use a proper test runner here
+              // This is a simplified simulation
+              const content = await vscode.workspace.fs.readFile(file);
+              const testFunction = new Function('assert', content.toString());
+              testFunction(require('assert'));
+              results[path.basename(file.path)] = { status: 'passed' };
+            } catch (error) {
+              results[path.basename(file.path)] = { 
+                status: 'failed',
+                error: error.message,
+                stackTrace: error.stack
+              };
+            }
+          }
+        
+          return results;
+        }
+        
+        function getTestFolderPath(): string {
+          const workspaceFolders = vscode.workspace.workspaceFolders;
+          if (!workspaceFolders) {
+            throw new Error('No workspace folder found');
+          }
+          return path.join(workspaceFolders[0].uri.fsPath, 'tests');
+        }
+        
+        setupWebviewMessageHandler(webviewView, this._subscriptions, this._sharedObservable, handleWebviewMessage);
+    }
+
+    private _getHtmlForWebview(webview: vscode.Webview): string {
+        // Construct the URI for the bundled testView.js script
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', 'testView.js'));
+        vscode.window.showInformationMessage(scriptUri.toString());
+        const bootstrapUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', "css", 'bootstrap.min.css'));
+        const customStylesUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', "css", 'custom.css'));
+        return `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Orchestra AI Test View</title>
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src ${webview.cspSource};">
+                <link href="${bootstrapUri}" rel="stylesheet">
+                <link href="${customStylesUri}" rel="stylesheet">
+            </head>
+            <body>
+                <div id="root"></div>
+                <script src="${scriptUri}"></script>
+            </body>
+            </html>
+        `;
+    }
+}
+/* ================================================================================ */
+import * as vscode from 'vscode';
+import EnhancedZenObservable from '../observables/EnhancedZenObservable';
+import { setupWebviewMessageHandler } from '../utils/webviewUtils';
+
+export class VersionControlViewProvider implements vscode.WebviewViewProvider {
+    public static readonly viewType = 'orchestra-ai.versionControlView';
+
+    private _view?: vscode.WebviewView;
+
+    constructor(
+        private readonly _extensionUri: vscode.Uri,
+        private readonly _subscriptions: vscode.Disposable[],
+        private readonly _sharedObservable: EnhancedZenObservable,
+    ) { }
+
+    public resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        context: vscode.WebviewViewResolveContext,
+        _token: vscode.CancellationToken,
+    ) {
+        this._view = webviewView;
+
+        webviewView.webview.options = {
+            enableScripts: true,
+            // Make sure to update the local resource roots to allow access to your dist folder
+            localResourceRoots: [vscode.Uri.joinPath(this._extensionUri, 'dist')]
+        };
+
+        // Set the HTML content of the webview, which includes the reference to your projectView.js script
+        const html = this._getHtmlForWebview(webviewView.webview);
+        vscode.window.showInformationMessage(html);
+        webviewView.webview.html = html;
+
+        async function showDiff(oldVersion: { content: string, fileName: string }, newVersion: { content: string, fileName: string }) {
+          const oldUri = vscode.Uri.parse(`untitled:${oldVersion.fileName}`);
+          const newUri = vscode.Uri.parse(`untitled:${newVersion.fileName}`);
+        
+          const oldDoc = await vscode.workspace.openTextDocument(oldUri);
+          const newDoc = await vscode.workspace.openTextDocument(newUri);
+        
+          await vscode.workspace.applyEdit(new vscode.WorkspaceEdit());
+          const edit = new vscode.WorkspaceEdit();
+          edit.insert(oldUri, new vscode.Position(0, 0), oldVersion.content);
+          edit.insert(newUri, new vscode.Position(0, 0), newVersion.content);
+          await vscode.workspace.applyEdit(edit);
+        
+          const config = vscode.workspace.getConfiguration('versionControl');
+          const diffViewMode = config.get<string>('diffViewMode', 'inline');
+        
+          vscode.commands.executeCommand('vscode.diff', oldUri, newUri, 'Version Comparison', { viewMode: diffViewMode });
+        }
+        
+        function showNotification(type: 'info' | 'warning' | 'error', message: string) {
+          switch (type) {
+            case 'info':
+              vscode.window.showInformationMessage(message);
+              break;
+            case 'warning':
+              vscode.window.showWarningMessage(message);
+              break;
+            case 'error':
+              vscode.window.showErrorMessage(message);
+              break;
+          }
+        }
+
+        async function handleWebviewMessage(message: any) {
+            
+          switch (message.command) {
+            case 'viewDiff':
+              await showDiff(message.oldVersion, message.newVersion);
+              return;
+            case 'showNotification':
+              showNotification(message.type, message.message);
+              return;
+          }
+        }
+        
+        setupWebviewMessageHandler(webviewView, this._subscriptions, this._sharedObservable, handleWebviewMessage);
+    }
+
+    private _getHtmlForWebview(webview: vscode.Webview): string {
+        // Construct the URI for the bundled versionControlView.js script
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', 'versionControlView.js'));
+        vscode.window.showInformationMessage(scriptUri.toString());
+        const bootstrapUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', "css", 'bootstrap.min.css'));
+        const customStylesUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', "css", 'custom.css'));
+        return `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Orchestra AI Version Control View</title>
                 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src ${webview.cspSource};">
                 <link href="${bootstrapUri}" rel="stylesheet">
                 <link href="${customStylesUri}" rel="stylesheet">
@@ -1141,7 +2600,8 @@ import { StateShape } from '../constants/initialState';
 export function setupWebviewMessageHandler(
   view: vscode.WebviewView, 
   subscriptions: vscode.Disposable[], 
-  sharedObservable: EnhancedZenObservable
+  sharedObservable: EnhancedZenObservable,
+  customMessageHandler: (message: any) => void = () => {}
 ) {
   const disposables: vscode.Disposable[] = [];
 
@@ -1150,11 +2610,12 @@ export function setupWebviewMessageHandler(
       switch (message.command) {
         case 'getState':
           sendStateUpdate(view, message.key, sharedObservable.getState(message.key));
-          break;
+          return;
         case 'updateState':
           updateSharedState(sharedObservable, message.key, message.data);
-          break;
+          return;
       }
+      customMessageHandler(message);
     }
   );
 
@@ -1209,6 +2670,22 @@ window.addEventListener('message', (event) => {
 
 /* ================================================================================ */
 import React from 'react';
+import OrchestratorControlView from '../components/OrchestratorControlView';
+import { createRoot } from 'react-dom/client';
+
+const rootElement = document.getElementById('root');
+const root = createRoot(rootElement);
+
+root.render(<OrchestratorControlView />);
+
+// Handle incoming messages from the extension
+window.addEventListener('message', (event) => {
+  const message = event.data;
+  console.log('Message received in OrchestratorControlView:', message);
+});
+
+/* ================================================================================ */
+import React from 'react';
 import ProjectView from '../components/ProjectView';
 import { createRoot } from 'react-dom/client';
 
@@ -1237,4 +2714,52 @@ root.render(<SettingsView />);
 window.addEventListener('message', (event) => {
   const message = event.data;
   console.log('Message received in SettingsView:', message);
+});
+
+/* ================================================================================ */
+import React from 'react';
+import TaskView from '../components/TaskView';
+import { createRoot } from 'react-dom/client';
+
+const rootElement = document.getElementById('root');
+const root = createRoot(rootElement);
+
+root.render(<TaskView />);
+
+// Handle incoming messages from the extension
+window.addEventListener('message', (event) => {
+  const message = event.data;
+  console.log('Message received in TaskView:', message);
+});
+
+/* ================================================================================ */
+import React from 'react';
+import TestView from '../components/TestView';
+import { createRoot } from 'react-dom/client';
+
+const rootElement = document.getElementById('root');
+const root = createRoot(rootElement);
+
+root.render(<TestView />);
+
+// Handle incoming messages from the extension
+window.addEventListener('message', (event) => {
+  const message = event.data;
+  console.log('Message received in TestView:', message);
+});
+
+/* ================================================================================ */
+import React from 'react';
+import VersionControlView from '../components/VersionControlView';
+import { createRoot } from 'react-dom/client';
+
+const rootElement = document.getElementById('root');
+const root = createRoot(rootElement);
+
+root.render(<VersionControlView />);
+
+// Handle incoming messages from the extension
+window.addEventListener('message', (event) => {
+  const message = event.data;
+  console.log('Message received in VersionControlView:', message);
 });
