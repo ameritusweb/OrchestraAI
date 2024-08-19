@@ -1,5 +1,5 @@
 {
-  "stateVersion": "lzzv29dw-wl9pr",
+  "stateVersion": "m00z6tuo-vs7sz",
   "projectView": {
     "name": "",
     "description": "",
@@ -14,5 +14,9 @@
   },
   "testView": {
     "tests": []
+  },
+  "chatView": {
+    "context": "",
+    "messages": []
   }
 }

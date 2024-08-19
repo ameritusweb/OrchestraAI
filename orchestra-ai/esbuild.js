@@ -94,6 +94,7 @@ async function buildWebview(entryFile, outFile) {
 	  // Build the webviews (React apps)
 	  await buildWebview('src/webviews/projectView.js', 'dist/projectView.js');
 	  await buildWebview('src/webviews/settingsView.js', 'dist/settingsView.js');
+	  await buildWebview('src/webviews/chatView.js', 'dist/chatView.js');
   }
   
   main().catch((e) => {

@@ -50,6 +50,12 @@
           "type": "webview",
           "name": "Project View",
           "contextualTitle": "My View Title"
+        },
+        {
+          "id": "orchestraChatView",
+          "type": "webview",
+          "name": "Chat View",
+          "contextualTitle": "My View Title"
         }
       ],
       "myCustomPanel": [

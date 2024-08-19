@@ -155,6 +155,28 @@ const SettingsView = () => {
 
 export default SettingsView;
 /* ================================================================================ */
+export const initialState = {
+    stateVersion: "1",
+    projectView: {
+      name: '',
+      description: '',
+      language: '',
+      framework: '',
+      tools: [],
+      aiModel: '',
+      codingStandards: ''
+    },
+    settingsView: {
+      standards: {}
+    },
+    testView: {
+      tests: []
+    }
+    // Add any other initial state properties here
+  };
+  
+  export type StateShape = typeof initialState;
+/* ================================================================================ */
 /* Create a CSS file, e.g., custom.css */
 :root {
     --bs-body-bg: var(--vscode-editor-background);
@@ -202,14 +224,17 @@ import * as vscode from 'vscode';
 import EnhancedZenObservable from './observables/EnhancedZenObservable';
 import { ProjectViewProvider } from './providers/ProjectViewProvider';
 import { SettingsViewProvider } from './providers/SettingsViewProvider';
+import { FileSystemUtils } from './utils/FileSystemUtils';
 
-const sharedObservable = new EnhancedZenObservable();
+const fileSystemUtils = new FileSystemUtils();
+const sharedObservable = new EnhancedZenObservable(fileSystemUtils);
 const activeWebviews: vscode.WebviewView[] = [];
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 
+    await sharedObservable.initializeFromFile(context);
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "orchestra-ai" is now active!');
@@ -301,8 +326,11 @@ export function useSharedContext(key = '', useDiff = false) {
     return [state, updateState];
 }
 /* ================================================================================ */
+import * as vscode from 'vscode';
 import Observable from 'zen-observable';
 import { computeDiff as computeDiffUtil, computeArrayDiff as computeArrayDiffUtil } from '../utils/observableUtils';
+import { FileSystemUtils } from '../utils/FileSystemUtils';
+import { StateShape, initialState } from '../constants/initialState';
 
 type ObserverType<T> = Partial<ZenObservable.Observer<T>>;
 
@@ -422,13 +450,16 @@ class HistoryModel<T> {
 }
 
 class EnhancedZenObservable {
-  private state: Record<string, any>;
-  private historyModel: HistoryModel<Record<string, any>>;
+  private stateFileUri: vscode.Uri | null = null;
+  private fileSystemUtils: FileSystemUtils;
+  private state: StateShape;
+  private historyModel: HistoryModel<StateShape>;
   private observables: Map<string, EnhancedSubscription<any>>;
   private diffObservables: Map<string, EnhancedSubscription<any>>;
 
-  constructor(initialState: Record<string, any> = {}) {
+  constructor(fileSystemUtils: FileSystemUtils) {
     this.state = initialState;
+    this.fileSystemUtils = fileSystemUtils;
     this.historyModel = new HistoryModel();
     this.observables = new Map();
     this.diffObservables = new Map();
@@ -525,7 +556,23 @@ class EnhancedZenObservable {
     return subscription.subscribe(callback);
   }
 
-  setState(updater: ((state: Record<string, any>) => Record<string, any>) | Record<string, any>, recordHistory: boolean = true): void {
+  async initializeFromFile(context: vscode.ExtensionContext): Promise<void> {
+    try {
+      this.stateFileUri = await this.fileSystemUtils.getOrCreateStateFile(context);
+      const savedState = await this.fileSystemUtils.readStateFile(this.stateFileUri);
+      this.setState(savedState);
+    } catch (error) {
+      console.error('Error initializing state from file:', error);
+    }
+  }
+
+  private async persistState(): Promise<void> {
+    if (this.stateFileUri) {
+      await this.fileSystemUtils.writeStateFile(this.stateFileUri, this.state);
+    }
+  }
+
+  setState(updater: ((state: StateShape) => StateShape) | StateShape, recordHistory: boolean = true): void {
     try {
       const prevState = JSON.parse(JSON.stringify(this.state));
       const newState = typeof updater === 'function' ? updater(this.state) : updater;
@@ -541,6 +588,8 @@ class EnhancedZenObservable {
       if (recordHistory) {
         this.historyModel.push(prevState);
       }
+
+      this.persistState();
 
     } catch (error) {
       console.error('Error setting state:', error);
@@ -571,7 +620,7 @@ class EnhancedZenObservable {
     return this.historyModel.canRedo();
   }
 
-  getState(key?: string): any {
+  getState(key?: string): StateShape | null {
     if (!key) return JSON.parse(JSON.stringify(this.state));
     const keys = key.split('.');
     let value: any = this.state;
@@ -579,7 +628,7 @@ class EnhancedZenObservable {
       const k = keys[i];
       if (value === undefined || value === null) {
         console.warn(`Warning: Property '${keys.slice(0, i + 1).join('.')}' is undefined in the state object. Consider adding it to the initial state.`);
-        return undefined;
+        return null;
       }
       value = value[k];
     }
@@ -740,6 +789,84 @@ suite('Extension Test Suite', () => {
 });
 
 /* ================================================================================ */
+import * as vscode from 'vscode';
+import { initialState, StateShape } from '../constants/initialState';
+
+export class FileSystemUtils {
+  async getOrCreateStateFile(context: vscode.ExtensionContext): Promise<vscode.Uri> {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) {
+      throw new Error('No workspace folder open');
+    }
+
+    const rootUri = workspaceFolders[0].uri;
+    const orchestraFolderUri = vscode.Uri.joinPath(rootUri, '.orchestra-ai');
+    const stateFileUri = vscode.Uri.joinPath(orchestraFolderUri, 'state.orc');
+
+    try {
+      await vscode.workspace.fs.stat(orchestraFolderUri);
+    } catch {
+      // Folder doesn't exist, create it
+      await vscode.workspace.fs.createDirectory(orchestraFolderUri);
+    }
+
+    try {
+      await vscode.workspace.fs.stat(stateFileUri);
+    } catch {
+      // File doesn't exist, create it with initial state
+      await this.writeStateFile(stateFileUri, initialState);
+    }
+
+    return stateFileUri;
+  }
+
+  async readStateFile(fileUri: vscode.Uri): Promise<StateShape> {
+    try {
+      const data = await vscode.workspace.fs.readFile(fileUri);
+      const parsedData = JSON.parse(data.toString());
+      // Merge the parsed data with the initial state to ensure all keys exist
+      return this.mergeWithInitialState(parsedData);
+    } catch (error) {
+      console.error('Error reading state file:', error);
+      return initialState;
+    }
+  }
+
+  async writeStateFile(fileUri: vscode.Uri, data: StateShape): Promise<void> {
+    try {
+      await vscode.workspace.fs.writeFile(fileUri, Buffer.from(JSON.stringify(data, null, 2), 'utf8'));
+    } catch (error) {
+      console.error('Error writing state file:', error);
+    }
+  }
+
+  private mergeWithInitialState(data: Partial<StateShape>): StateShape {
+    return this.deepMerge(initialState, data) as StateShape;
+  }
+
+  private deepMerge(target: any, source: any): any {
+    const output = Object.assign({}, target);
+    if (this.isObject(target) && this.isObject(source)) {
+      Object.keys(source).forEach(key => {
+        if (this.isObject(source[key])) {
+          if (!(key in target)) {
+            Object.assign(output, { [key]: source[key] });
+          } else {
+            output[key] = this.deepMerge(target[key], source[key]);
+          }
+        } else {
+          Object.assign(output, { [key]: source[key] });
+        }
+      });
+    }
+    return output;
+  }
+
+  private isObject(item: any): boolean {
+    return (item && typeof item === 'object' && !Array.isArray(item));
+  }
+}
+/* ================================================================================ */
 type DiffResult = {
     type: 'replace' | 'object' | 'array';
     value: any;
@@ -807,24 +934,46 @@ type DiffResult = {
 /* ================================================================================ */
 import * as vscode from 'vscode';
 import EnhancedZenObservable from '../observables/EnhancedZenObservable';
+import { StateShape } from '../constants/initialState';
 
-export function setupWebviewMessageHandler(view: vscode.WebviewView, subscriptions: vscode.Disposable[], sharedObservable: EnhancedZenObservable) {
-    const disposables: vscode.Disposable[] = [];
-  
-    const messageHandler = view.webview.onDidReceiveMessage(
-      (message) => {
-        if (message.command === 'updateState') {
-          sharedObservable.setState({ [message.key]: message.data });
+export function setupWebviewMessageHandler(
+  view: vscode.WebviewView, 
+  subscriptions: vscode.Disposable[], 
+  sharedObservable: EnhancedZenObservable
+) {
+  const disposables: vscode.Disposable[] = [];
+
+  const messageHandler = view.webview.onDidReceiveMessage(
+    (message) => {
+      if (message.command === 'updateState') {
+        try {
+          sharedObservable.setState((prevState: StateShape) => {
+            const newState = { ...prevState };
+            const keys = message.key.split('.');
+            let current: any = newState;
+            for (let i = 0; i < keys.length - 1; i++) {
+              if (!current[keys[i]]) {
+                current[keys[i]] = {};
+              }
+              current = current[keys[i]];
+            }
+            current[keys[keys.length - 1]] = message.data;
+            return newState;
+          });
+        } catch (error) {
+          console.error(`Error updating state for key "${message.key}":`, error);
+          vscode.window.showErrorMessage(`Failed to update state: ${(error as any).message}`);
         }
       }
-    );
-  
-    disposables.push(messageHandler);
-  
-    view.onDidDispose(() => {
-      disposables.forEach(disposable => disposable.dispose());
-    }, null, subscriptions);
-  }
+    }
+  );
+
+  disposables.push(messageHandler);
+
+  view.onDidDispose(() => {
+    disposables.forEach(disposable => disposable.dispose());
+  }, null, subscriptions);
+}
 /* ================================================================================ */
 import React from 'react';
 import ProjectView from '../components/ProjectView';

@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import EnhancedZenObservable from './observables/EnhancedZenObservable';
+import { ChatViewProvider } from './providers/ChatViewProvider';
 import { ProjectViewProvider } from './providers/ProjectViewProvider';
 import { SettingsViewProvider } from './providers/SettingsViewProvider';
 import { FileSystemUtils } from './utils/FileSystemUtils';
@@ -32,6 +33,10 @@ export async function activate(context: vscode.ExtensionContext) {
     const provider = new ProjectViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
 
     vscode.window.registerWebviewViewProvider('orchestraActivityView', provider);
+
+    const chatProvider = new ChatViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
+
+    vscode.window.registerWebviewViewProvider('orchestraChatView', chatProvider);
 
     // vscode.window.registerTreeDataProvider('orchestraActivityView', provider);
 

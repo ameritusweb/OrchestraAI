@@ -11,32 +11,47 @@ export function setupWebviewMessageHandler(
 
   const messageHandler = view.webview.onDidReceiveMessage(
     (message) => {
-      if (message.command === 'updateState') {
-        try {
-          sharedObservable.setState((prevState: StateShape) => {
-            const newState = { ...prevState };
-            const keys = message.key.split('.');
-            let current: any = newState;
-            for (let i = 0; i < keys.length - 1; i++) {
-              if (!current[keys[i]]) {
-                current[keys[i]] = {};
-              }
-              current = current[keys[i]];
-            }
-            current[keys[keys.length - 1]] = message.data;
-            return newState;
-          });
-        } catch (error) {
-          console.error(`Error updating state for key "${message.key}":`, error);
-          vscode.window.showErrorMessage(`Failed to update state: ${(error as any).message}`);
-        }
+      switch (message.command) {
+        case 'getState':
+          sendStateUpdate(view, message.key, sharedObservable.getState(message.key));
+          break;
+        case 'updateState':
+          updateSharedState(sharedObservable, message.key, message.data);
+          break;
       }
     }
   );
 
   disposables.push(messageHandler);
 
+  // Set up a subscription to the sharedObservable to send updates to the webview
+  const stateSubscription = sharedObservable.subscribe('', (newState) => {
+    sendStateUpdate(view, '', newState);
+  });
+
+  disposables.push({ dispose: () => stateSubscription.unsubscribe() });
+
   view.onDidDispose(() => {
     disposables.forEach(disposable => disposable.dispose());
   }, null, subscriptions);
+}
+
+function sendStateUpdate(view: vscode.WebviewView, key: string, data: any) {
+  view.webview.postMessage({ command: 'stateUpdate', key, data });
+}
+
+function updateSharedState(sharedObservable: EnhancedZenObservable, key: string, data: any) {
+  sharedObservable.setState((prevState: StateShape) => {
+    const newState = { ...prevState };
+    const keys = key.split('.');
+    let current: any = newState;
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (!current[keys[i]]) {
+        current[keys[i]] = {};
+      }
+      current = current[keys[i]];
+    }
+    current[keys[keys.length - 1]] = data;
+    return newState;
+  });
 }
