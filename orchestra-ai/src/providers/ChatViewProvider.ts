@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import EnhancedZenObservable from '../observables/EnhancedZenObservable';
 import { setupWebviewMessageHandler } from '../utils/webviewUtils';
+import axios from 'axios';
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'orchestra-ai.chatView';
@@ -102,7 +103,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             }
           }
         
-        setupWebviewMessageHandler(webviewView, this._subscriptions, this._sharedObservable);
+        setupWebviewMessageHandler(webviewView, this._subscriptions, this._sharedObservable, handleWebviewMessage);
     }
 
     private _getHtmlForWebview(webview: vscode.Webview): string {

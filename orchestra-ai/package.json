@@ -52,6 +52,12 @@
           "contextualTitle": "My View Title"
         },
         {
+          "id": "orchestraTestView",
+          "type": "webview",
+          "name": "Test View",
+          "contextualTitle": "My View Title"
+        },
+        {
           "id": "orchestraChatView",
           "type": "webview",
           "name": "Chat View",

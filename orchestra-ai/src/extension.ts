@@ -5,6 +5,7 @@ import EnhancedZenObservable from './observables/EnhancedZenObservable';
 import { ChatViewProvider } from './providers/ChatViewProvider';
 import { ProjectViewProvider } from './providers/ProjectViewProvider';
 import { SettingsViewProvider } from './providers/SettingsViewProvider';
+import { TestViewProvider } from './providers/TestViewProvider';
 import { FileSystemUtils } from './utils/FileSystemUtils';
 
 const fileSystemUtils = new FileSystemUtils();
@@ -37,6 +38,10 @@ export async function activate(context: vscode.ExtensionContext) {
     const chatProvider = new ChatViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
 
     vscode.window.registerWebviewViewProvider('orchestraChatView', chatProvider);
+
+    const testProvider = new TestViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
+
+    vscode.window.registerWebviewViewProvider('orchestraTestView', testProvider);
 
     // vscode.window.registerTreeDataProvider('orchestraActivityView', provider);
 
