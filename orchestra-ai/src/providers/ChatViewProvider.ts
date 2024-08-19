@@ -30,6 +30,77 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         const html = this._getHtmlForWebview(webviewView.webview);
         vscode.window.showInformationMessage(html);
         webviewView.webview.html = html;
+
+        async function handleWebviewMessage(message: any) {
+            switch (message.command) {
+              case 'getAvailableModels':
+                const models = await vscode.lm.selectChatModels({ vendor: 'copilot' });
+                webviewView.webview.postMessage({ command: 'availableModels', models });
+                break;
+          
+              case 'sendMessage':
+                if (message.useLocalApi) {
+                  sendMessageToLocalApi(message.message, message.localApiEndpoint, message.context);
+                } else {
+                  sendMessageToVSCodeApi(message.message, message.model, message.context);
+                }
+                break;
+          
+              case 'getActiveEditorContent':
+                const editor = vscode.window.activeTextEditor;
+                if (editor) {
+                  const content = editor.document.getText();
+                  webviewView.webview.postMessage({ command: 'appendResponse', content: `Active editor content set as context: ${content.substring(0, 100)}...` });
+                } else {
+                  webviewView.webview.postMessage({ command: 'error', error: 'No active editor' });
+                }
+                break;
+            }
+          }
+          
+          async function sendMessageToVSCodeApi(message: string, modelId: string, context: string) {
+            try {
+              const [model] = await vscode.lm.selectChatModels({ id: modelId });
+              if (!model) {
+                webviewView.webview.postMessage({ command: 'error', error: 'Selected model not available' });
+                return;
+              }
+          
+              const craftedPrompt = [
+                vscode.LanguageModelChatMessage.User(context),
+                vscode.LanguageModelChatMessage.User(message)
+              ];
+          
+              const response = await model.sendRequest(craftedPrompt, {}, new vscode.CancellationTokenSource().token);
+          
+              for await (const fragment of response.text) {
+                webviewView.webview.postMessage({ command: 'appendResponse', content: fragment });
+              }
+            } catch (err) {
+              if (err instanceof vscode.LanguageModelError) {
+                webviewView.webview.postMessage({ command: 'error', error: `${err.message} (${err.code})` });
+              } else {
+                webviewView.webview.postMessage({ command: 'error', error: 'An unexpected error occurred' });
+              }
+            }
+          }
+          
+          async function sendMessageToLocalApi(message: string, apiEndpoint: string, context: string) {
+            try {
+              const response = await axios.post(apiEndpoint, {
+                message: message,
+                context: context
+              });
+          
+              if (response.data && response.data.response) {
+                webviewView.webview.postMessage({ command: 'appendResponse', content: response.data.response });
+              } else {
+                throw new Error('Invalid response from local API');
+              }
+            } catch (error) {
+              webviewView.webview.postMessage({ command: 'error', error: `Error calling local API: ${error.message}` });
+            }
+          }
         
         setupWebviewMessageHandler(webviewView, this._subscriptions, this._sharedObservable);
     }

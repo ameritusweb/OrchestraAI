@@ -5,7 +5,13 @@ import { useSharedContext } from '../hooks/useSharedContext';
 
 const ChatView = () => {
   const [chatState, updateChatState, vscode] = useSharedContext('chatView');
-  const { messages, selectedModel, context } = chatState || { messages: [], selectedModel: 'gpt-4o', context: '' };
+  const { messages, selectedModel, context, useLocalApi, localApiEndpoint } = chatState || {
+    messages: [],
+    selectedModel: 'gpt-4o',
+    context: '',
+    useLocalApi: false,
+    localApiEndpoint: 'http://localhost:5000/api/languagemodel'
+  };
 
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -17,9 +23,10 @@ const ChatView = () => {
   }, [messages]);
 
   useEffect(() => {
-    // Fetch available models when component mounts
-    vscode.postMessage({ command: 'getAvailableModels' });
-  }, []);
+    if (!useLocalApi) {
+      vscode.postMessage({ command: 'getAvailableModels' });
+    }
+  }, [useLocalApi]);
 
   useEffect(() => {
     const messageHandler = (event) => {
@@ -33,9 +40,9 @@ const ChatView = () => {
             ...prevState,
             messages: [...prevState.messages, { role: 'assistant', content: message.content }]
           }));
+          setIsLoading(false);
           break;
         case 'error':
-          // Handle error messages
           console.error(message.error);
           setIsLoading(false);
           break;
@@ -65,7 +72,9 @@ const ChatView = () => {
       command: 'sendMessage',
       message: userInput,
       model: selectedModel,
-      context: context
+      context: context,
+      useLocalApi: useLocalApi,
+      localApiEndpoint: localApiEndpoint
     });
   };
 
@@ -73,6 +82,20 @@ const ChatView = () => {
     updateChatState(prevState => ({
       ...prevState,
       selectedModel: event.target.value
+    }));
+  };
+
+  const handleApiToggle = () => {
+    updateChatState(prevState => ({
+      ...prevState,
+      useLocalApi: !prevState.useLocalApi
+    }));
+  };
+
+  const handleLocalApiEndpointChange = (event) => {
+    updateChatState(prevState => ({
+      ...prevState,
+      localApiEndpoint: event.target.value
     }));
   };
 
@@ -93,18 +116,46 @@ const ChatView = () => {
       <h2 className="mb-4">AI Chat</h2>
 
       <div className="mb-3">
-        <label htmlFor="model-select" className="form-label">Select AI Model:</label>
-        <select
-          id="model-select"
-          className="form-select"
-          value={selectedModel}
-          onChange={handleModelChange}
-        >
-          {availableModels.map(model => (
-            <option key={model.id} value={model.id}>{model.id}</option>
-          ))}
-        </select>
+        <div className="form-check form-switch">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id="apiToggle"
+            checked={useLocalApi}
+            onChange={handleApiToggle}
+          />
+          <label className="form-check-label" htmlFor="apiToggle">
+            Use Local API
+          </label>
+        </div>
       </div>
+
+      {useLocalApi ? (
+        <div className="mb-3">
+          <label htmlFor="local-api-endpoint" className="form-label">Local API Endpoint:</label>
+          <input
+            type="text"
+            className="form-control"
+            id="local-api-endpoint"
+            value={localApiEndpoint}
+            onChange={handleLocalApiEndpointChange}
+          />
+        </div>
+      ) : (
+        <div className="mb-3">
+          <label htmlFor="model-select" className="form-label">Select AI Model:</label>
+          <select
+            id="model-select"
+            className="form-select"
+            value={selectedModel}
+            onChange={handleModelChange}
+          >
+            {availableModels.map(model => (
+              <option key={model.id} value={model.id}>{model.id}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="mb-3">
         <button className="btn btn-secondary me-2" onClick={handleClearContext}>Clear Context</button>

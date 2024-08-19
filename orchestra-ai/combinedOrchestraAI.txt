@@ -1,3 +1,151 @@
+ import React, { useState, useEffect, useRef } from 'react';
+// Import Bootstrap JS
+import 'bootstrap';
+import { useSharedContext } from '../hooks/useSharedContext';
+
+const ChatView = () => {
+  const [chatState, updateChatState, vscode] = useSharedContext('chatView');
+  const { messages, selectedModel, context } = chatState || { messages: [], selectedModel: 'gpt-4o', context: '' };
+
+  const [userInput, setUserInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [availableModels, setAvailableModels] = useState([]);
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  useEffect(() => {
+    // Fetch available models when component mounts
+    vscode.postMessage({ command: 'getAvailableModels' });
+  }, []);
+
+  useEffect(() => {
+    const messageHandler = (event) => {
+      const message = event.data;
+      switch (message.command) {
+        case 'availableModels':
+          setAvailableModels(message.models);
+          break;
+        case 'appendResponse':
+          updateChatState(prevState => ({
+            ...prevState,
+            messages: [...prevState.messages, { role: 'assistant', content: message.content }]
+          }));
+          break;
+        case 'error':
+          // Handle error messages
+          console.error(message.error);
+          setIsLoading(false);
+          break;
+      }
+    };
+
+    window.addEventListener('message', messageHandler);
+
+    return () => {
+      window.removeEventListener('message', messageHandler);
+    };
+  }, []);
+
+  const handleSendMessage = async () => {
+    if (!userInput.trim()) return;
+
+    const newMessage = { role: 'user', content: userInput };
+    updateChatState(prevState => ({
+      ...prevState,
+      messages: [...prevState.messages, newMessage]
+    }));
+
+    setUserInput('');
+    setIsLoading(true);
+
+    vscode.postMessage({
+      command: 'sendMessage',
+      message: userInput,
+      model: selectedModel,
+      context: context
+    });
+  };
+
+  const handleModelChange = (event) => {
+    updateChatState(prevState => ({
+      ...prevState,
+      selectedModel: event.target.value
+    }));
+  };
+
+  const handleClearContext = () => {
+    updateChatState(prevState => ({
+      ...prevState,
+      context: '',
+      messages: []
+    }));
+  };
+
+  const handleUpdateContext = () => {
+    vscode.postMessage({ command: 'getActiveEditorContent' });
+  };
+
+  return (
+    <div className="chat-view container mt-4">
+      <h2 className="mb-4">AI Chat</h2>
+
+      <div className="mb-3">
+        <label htmlFor="model-select" className="form-label">Select AI Model:</label>
+        <select
+          id="model-select"
+          className="form-select"
+          value={selectedModel}
+          onChange={handleModelChange}
+        >
+          {availableModels.map(model => (
+            <option key={model.id} value={model.id}>{model.id}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="mb-3">
+        <button className="btn btn-secondary me-2" onClick={handleClearContext}>Clear Context</button>
+        <button className="btn btn-info" onClick={handleUpdateContext}>Use Active Editor Content as Context</button>
+      </div>
+
+      <div className="chat-messages border p-3 mb-3" style={{height: '400px', overflowY: 'auto'}}>
+        {messages.map((message, index) => (
+          <div key={index} className={`mb-2 ${message.role === 'user' ? 'text-end' : ''}`}>
+            <span className={`badge ${message.role === 'user' ? 'bg-primary' : 'bg-secondary'}`}>
+              {message.role === 'user' ? 'You' : 'AI'}
+            </span>
+            <p className="mb-0">{message.content}</p>
+          </div>
+        ))}
+        {isLoading && <div className="text-center">AI is thinking...</div>}
+        <div ref={chatEndRef} />
+      </div>
+
+      <div className="input-group">
+        <textarea
+          className="form-control"
+          value={userInput}
+          onChange={(e) => setUserInput(e.target.value)}
+          placeholder="Type your message here..."
+          rows="3"
+        />
+        <button
+          className="btn btn-primary"
+          onClick={handleSendMessage}
+          disabled={isLoading}
+        >
+          Send
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default ChatView;
+/* ================================================================================ */
 import React from 'react';
 // Import Bootstrap JS
 import 'bootstrap';
@@ -222,6 +370,7 @@ export const initialState = {
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import EnhancedZenObservable from './observables/EnhancedZenObservable';
+import { ChatViewProvider } from './providers/ChatViewProvider';
 import { ProjectViewProvider } from './providers/ProjectViewProvider';
 import { SettingsViewProvider } from './providers/SettingsViewProvider';
 import { FileSystemUtils } from './utils/FileSystemUtils';
@@ -253,6 +402,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
     vscode.window.registerWebviewViewProvider('orchestraActivityView', provider);
 
+    const chatProvider = new ChatViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
+
+    vscode.window.registerWebviewViewProvider('orchestraChatView', chatProvider);
+
     // vscode.window.registerTreeDataProvider('orchestraActivityView', provider);
 
     // Broadcast state updates to all active webviews
@@ -276,54 +429,41 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 // This method is called when your extension is deactivated
 export function deactivate() {}
 /* ================================================================================ */
-import { useEffect, useState, useCallback } from 'react';
-import EnhancedZenObservable from '../observables/EnhancedZenObservable'; // Adjust the import path accordingly
+import { useState, useEffect, useCallback } from 'react';
 
 const vscode = acquireVsCodeApi();
-const sharedObservable = new EnhancedZenObservable(); // Create a shared observable instance
 
-export function useSharedContext(key = '', useDiff = false) {
-    const [state, setState] = useState(() => sharedObservable.getState(key));
+export function useSharedContext(key = '') {
+  const [state, setState] = useState(null);
 
-    useEffect(() => {
-        const subscription = sharedObservable.subscribe(
-            key,
-            (newState) => {
-                // Only update state if it's different
-                setState(prevState => {
-                    if (JSON.stringify(prevState) !== JSON.stringify(newState)) {
-                        vscode.postMessage({ command: 'stateUpdate', key, data: newState });
-                        return newState;
-                    }
-                    return prevState;
-                });
-            },
-            useDiff
-        );
+  useEffect(() => {
+    const messageHandler = (event) => {
+      const message = event.data;
+      if (message.command === 'stateUpdate' && message.key === key) {
+        setState(message.data);
+      }
+    };
 
-        return () => {
-            subscription.unsubscribe();
-        };
-    }, [key, useDiff]);
+    window.addEventListener('message', messageHandler);
 
-    const updateState = useCallback((updater) => {
-        try {
-            sharedObservable.setState((currentState) => {
-                const newState = typeof updater === 'function' ? updater(currentState[key]) : updater;
-                if (JSON.stringify(currentState[key]) !== JSON.stringify(newState)) {
-                    return {
-                        ...currentState,
-                        [key]: newState,
-                    };
-                }
-                return currentState;
-            });
-        } catch (error) {
-            console.error('Failed to update state:', error);
-        }
-    }, [key]);
+    // Request initial state
+    vscode.postMessage({ command: 'getState', key });
 
-    return [state, updateState];
+    return () => {
+      window.removeEventListener('message', messageHandler);
+    };
+  }, [key]);
+
+  const updateState = useCallback((updater) => {
+    const newState = typeof updater === 'function' ? updater(state) : updater;
+    vscode.postMessage({
+      command: 'updateState',
+      key,
+      data: newState
+    });
+  }, [key, state]);
+
+  return [state, updateState, vscode];
 }
 /* ================================================================================ */
 import * as vscode from 'vscode';
@@ -652,6 +792,68 @@ import * as vscode from 'vscode';
 import EnhancedZenObservable from '../observables/EnhancedZenObservable';
 import { setupWebviewMessageHandler } from '../utils/webviewUtils';
 
+export class ChatViewProvider implements vscode.WebviewViewProvider {
+    public static readonly viewType = 'orchestra-ai.chatView';
+
+    private _view?: vscode.WebviewView;
+
+    constructor(
+        private readonly _extensionUri: vscode.Uri,
+        private readonly _subscriptions: vscode.Disposable[],
+        private readonly _sharedObservable: EnhancedZenObservable,
+    ) { }
+
+    public resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        context: vscode.WebviewViewResolveContext,
+        _token: vscode.CancellationToken,
+    ) {
+        this._view = webviewView;
+
+        webviewView.webview.options = {
+            enableScripts: true,
+            // Make sure to update the local resource roots to allow access to your dist folder
+            localResourceRoots: [vscode.Uri.joinPath(this._extensionUri, 'dist')]
+        };
+
+        // Set the HTML content of the webview, which includes the reference to your projectView.js script
+        const html = this._getHtmlForWebview(webviewView.webview);
+        vscode.window.showInformationMessage(html);
+        webviewView.webview.html = html;
+        
+        setupWebviewMessageHandler(webviewView, this._subscriptions, this._sharedObservable);
+    }
+
+    private _getHtmlForWebview(webview: vscode.Webview): string {
+        // Construct the URI for the bundled projectView.js script
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', 'chatView.js'));
+        vscode.window.showInformationMessage(scriptUri.toString());
+        const bootstrapUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', "css", 'bootstrap.min.css'));
+        const customStylesUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', "css", 'custom.css'));
+        return `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Orchestra AI Chat View</title>
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src ${webview.cspSource};">
+                <link href="${bootstrapUri}" rel="stylesheet">
+                <link href="${customStylesUri}" rel="stylesheet">
+            </head>
+            <body>
+                <div id="root"></div>
+                <script src="${scriptUri}"></script>
+            </body>
+            </html>
+        `;
+    }
+}
+/* ================================================================================ */
+import * as vscode from 'vscode';
+import EnhancedZenObservable from '../observables/EnhancedZenObservable';
+import { setupWebviewMessageHandler } from '../utils/webviewUtils';
+
 export class ProjectViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'orchestra-ai.projectView';
 
@@ -945,35 +1147,66 @@ export function setupWebviewMessageHandler(
 
   const messageHandler = view.webview.onDidReceiveMessage(
     (message) => {
-      if (message.command === 'updateState') {
-        try {
-          sharedObservable.setState((prevState: StateShape) => {
-            const newState = { ...prevState };
-            const keys = message.key.split('.');
-            let current: any = newState;
-            for (let i = 0; i < keys.length - 1; i++) {
-              if (!current[keys[i]]) {
-                current[keys[i]] = {};
-              }
-              current = current[keys[i]];
-            }
-            current[keys[keys.length - 1]] = message.data;
-            return newState;
-          });
-        } catch (error) {
-          console.error(`Error updating state for key "${message.key}":`, error);
-          vscode.window.showErrorMessage(`Failed to update state: ${(error as any).message}`);
-        }
+      switch (message.command) {
+        case 'getState':
+          sendStateUpdate(view, message.key, sharedObservable.getState(message.key));
+          break;
+        case 'updateState':
+          updateSharedState(sharedObservable, message.key, message.data);
+          break;
       }
     }
   );
 
   disposables.push(messageHandler);
 
+  // Set up a subscription to the sharedObservable to send updates to the webview
+  const stateSubscription = sharedObservable.subscribe('', (newState) => {
+    sendStateUpdate(view, '', newState);
+  });
+
+  disposables.push({ dispose: () => stateSubscription.unsubscribe() });
+
   view.onDidDispose(() => {
     disposables.forEach(disposable => disposable.dispose());
   }, null, subscriptions);
 }
+
+function sendStateUpdate(view: vscode.WebviewView, key: string, data: any) {
+  view.webview.postMessage({ command: 'stateUpdate', key, data });
+}
+
+function updateSharedState(sharedObservable: EnhancedZenObservable, key: string, data: any) {
+  sharedObservable.setState((prevState: StateShape) => {
+    const newState = { ...prevState };
+    const keys = key.split('.');
+    let current: any = newState;
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (!current[keys[i]]) {
+        current[keys[i]] = {};
+      }
+      current = current[keys[i]];
+    }
+    current[keys[keys.length - 1]] = data;
+    return newState;
+  });
+}
+/* ================================================================================ */
+import React from 'react';
+import ChatView from '../components/ChatView';
+import { createRoot } from 'react-dom/client';
+
+const rootElement = document.getElementById('root');
+const root = createRoot(rootElement);
+
+root.render(<ChatView />);
+
+// Handle incoming messages from the extension
+window.addEventListener('message', (event) => {
+  const message = event.data;
+  console.log('Message received in ChatView:', message);
+});
+
 /* ================================================================================ */
 import React from 'react';
 import ProjectView from '../components/ProjectView';

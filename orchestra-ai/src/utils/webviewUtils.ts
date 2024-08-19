@@ -5,7 +5,8 @@ import { StateShape } from '../constants/initialState';
 export function setupWebviewMessageHandler(
   view: vscode.WebviewView, 
   subscriptions: vscode.Disposable[], 
-  sharedObservable: EnhancedZenObservable
+  sharedObservable: EnhancedZenObservable,
+  customMessageHandler: (message: any) => void = () => {}
 ) {
   const disposables: vscode.Disposable[] = [];
 
@@ -14,11 +15,12 @@ export function setupWebviewMessageHandler(
       switch (message.command) {
         case 'getState':
           sendStateUpdate(view, message.key, sharedObservable.getState(message.key));
-          break;
+          return;
         case 'updateState':
           updateSharedState(sharedObservable, message.key, message.data);
-          break;
+          return;
       }
+      customMessageHandler(message);
     }
   );
 
