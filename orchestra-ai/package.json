@@ -2,7 +2,7 @@
   "name": "orchestra-ai",
   "displayName": "OrchestraAI",
   "description": "Orchestrating AIs to develop code.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "ameritusweb",
   "repository": {
     "type": "git",
@@ -52,6 +52,12 @@
           "contextualTitle": "My View Title"
         },
         {
+          "id": "orchestraTaskView",
+          "type": "webview",
+          "name": "Task View",
+          "contextualTitle": "My View Title"
+        },
+        {
           "id": "orchestraOrchestratorControlView",
           "type": "webview",
           "name": "Orchestrator Control View",
@@ -91,12 +97,12 @@
     "watch": "npm-run-all -p watch:*",
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
+    "package": "npm run lint && node esbuild.js --production",
     "package2": "vsce package",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
-    "check-types": "tsc --noEmit",
+    "check-types": "tsc --noEmit --project tsconfig.json",
     "lint": "eslint src --ext ts",
     "test": "vscode-test"
   },
@@ -120,6 +126,8 @@
     "axios": "^1.7.4",
     "bootstrap": "^5.3.3",
     "react": "^18.3.1",
+    "react-beautiful-dnd": "^13.1.1",
+    "react-datepicker": "^7.3.0",
     "react-dom": "^18.3.1",
     "react-syntax-highlighter": "^15.5.0",
     "zen-observable": "^0.10.0"

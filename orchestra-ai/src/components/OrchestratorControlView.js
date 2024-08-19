@@ -30,8 +30,8 @@ const ProgressBar = ({ progress }) => (
         role="progressbar"
         style={{ width: `${progress}%` }}
         aria-valuenow={progress}
-        aria-valuemin="0"
-        aria-valuemax="100"
+        aria-valuemin={0}
+        aria-valuemax={100}
       >
         {progress}%
       </div>

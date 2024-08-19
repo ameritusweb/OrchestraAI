@@ -131,7 +131,7 @@ const TestView = () => {
                     className="form-control"
                     id="testName"
                     value={editingTest.name}
-                    onChange={(e) => setEditingTest({...editingTest, name: e.target.value})}
+                    onChange={(e) => setEditingTest({...editingTest, name: e.target['value']})}
                   />
                 </div>
                 <div className="mb-3">
@@ -139,9 +139,9 @@ const TestView = () => {
                   <textarea
                     className="form-control"
                     id="testCode"
-                    rows="5"
+                    rows={5}
                     value={editingTest.code}
-                    onChange={(e) => setEditingTest({...editingTest, code: e.target.value})}
+                    onChange={(e) => setEditingTest({...editingTest, code: e.target['value']})}
                   ></textarea>
                 </div>
               </div>

@@ -14,6 +14,9 @@ export const initialState = {
     },
     testView: {
       tests: []
+    },
+    taskView: {
+      tasks: []
     }
     // Add any other initial state properties here
   };

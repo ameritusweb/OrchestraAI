@@ -6,6 +6,7 @@ import { ChatViewProvider } from './providers/ChatViewProvider';
 import { ProjectViewProvider } from './providers/ProjectViewProvider';
 import { SettingsViewProvider } from './providers/SettingsViewProvider';
 import { TestViewProvider } from './providers/TestViewProvider';
+import { TaskViewProvider } from './providers/TaskViewProvider';
 import { VersionControlViewProvider } from './providers/VersionControlViewProvider';
 import { OrchestratorControlViewProvider } from './providers/OrchestratorControlViewProvider';
 import { FileSystemUtils } from './utils/FileSystemUtils';
@@ -44,6 +45,10 @@ export async function activate(context: vscode.ExtensionContext) {
     const testProvider = new TestViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
 
     vscode.window.registerWebviewViewProvider('orchestraTestView', testProvider);
+
+    const taskProvider = new TaskViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
+
+    vscode.window.registerWebviewViewProvider('orchestraTaskView', taskProvider);
 
     const versionControlProvider = new VersionControlViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
 

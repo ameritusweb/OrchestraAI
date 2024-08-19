@@ -179,9 +179,9 @@ const ChatView = () => {
         <textarea
           className="form-control"
           value={userInput}
-          onChange={(e) => setUserInput(e.target.value)}
+          onChange={(e) => setUserInput(e.target['value'])}
           placeholder="Type your message here..."
-          rows="3"
+          rows={3}
         />
         <button
           className="btn btn-primary"
