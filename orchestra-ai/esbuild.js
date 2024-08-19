@@ -97,6 +97,7 @@ async function buildWebview(entryFile, outFile) {
 	  await buildWebview('src/webviews/chatView.js', 'dist/chatView.js');
 	  await buildWebview('src/webviews/testView.js', 'dist/testView.js');
 	  await buildWebview('src/webviews/versionControlView.js', 'dist/versionControlView.js');
+	  await buildWebview('src/webviews/orchestratorControlView.js', 'dist/orchestratorControlView.js');
   }
   
   main().catch((e) => {

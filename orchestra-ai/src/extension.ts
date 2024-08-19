@@ -7,6 +7,7 @@ import { ProjectViewProvider } from './providers/ProjectViewProvider';
 import { SettingsViewProvider } from './providers/SettingsViewProvider';
 import { TestViewProvider } from './providers/TestViewProvider';
 import { VersionControlViewProvider } from './providers/VersionControlViewProvider';
+import { OrchestratorControlViewProvider } from './providers/OrchestratorControlViewProvider';
 import { FileSystemUtils } from './utils/FileSystemUtils';
 
 const fileSystemUtils = new FileSystemUtils();
@@ -47,6 +48,10 @@ export async function activate(context: vscode.ExtensionContext) {
     const versionControlProvider = new VersionControlViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
 
     vscode.window.registerWebviewViewProvider('orchestraVersionControlView', versionControlProvider);
+
+    const orchestratorControlProvider = new OrchestratorControlViewProvider(context.extensionUri, context.subscriptions, sharedObservable);
+
+    vscode.window.registerWebviewViewProvider('orchestraOrchestratorControlView', orchestratorControlProvider);
 
     // vscode.window.registerTreeDataProvider('orchestraActivityView', provider);
 

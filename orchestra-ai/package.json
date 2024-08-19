@@ -52,6 +52,12 @@
           "contextualTitle": "My View Title"
         },
         {
+          "id": "orchestraOrchestratorControlView",
+          "type": "webview",
+          "name": "Orchestrator Control View",
+          "contextualTitle": "My View Title"
+        },
+        {
           "id": "orchestraVersionControlView",
           "type": "webview",
           "name": "Version Control View",
