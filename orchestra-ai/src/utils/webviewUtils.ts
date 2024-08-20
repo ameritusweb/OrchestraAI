@@ -18,20 +18,22 @@ export function setupWebviewMessageHandler(
           return;
         case 'updateState':
           updateSharedState(sharedObservable, message.key, message.data);
+          sendStateUpdate(view, message.key, sharedObservable.getState(message.key));
           return;
       }
       customMessageHandler(message);
+      sendStateUpdate(view, message.key, sharedObservable.getState(message.key));
     }
   );
 
   disposables.push(messageHandler);
 
-  // Set up a subscription to the sharedObservable to send updates to the webview
-  const stateSubscription = sharedObservable.subscribe('', (newState) => {
-    sendStateUpdate(view, '', newState);
-  });
+  // // Set up a subscription to the sharedObservable to send updates to the webview
+  // const stateSubscription = sharedObservable.subscribe('', (newState) => {
+  //   sendStateUpdate(view, '', newState);
+  // });
 
-  disposables.push({ dispose: () => stateSubscription.unsubscribe() });
+  // disposables.push({ dispose: () => stateSubscription.unsubscribe() });
 
   view.onDidDispose(() => {
     disposables.forEach(disposable => disposable.dispose());

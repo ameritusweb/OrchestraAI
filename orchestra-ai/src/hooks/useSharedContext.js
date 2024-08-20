@@ -8,8 +8,10 @@ export function useSharedContext(key = '') {
   useEffect(() => {
     const messageHandler = (event) => {
       const message = event.data;
+      console.log('Received message in useSharedContext:', message);
       if (message.command === 'stateUpdate' && message.key === key) {
         setState(message.data);
+        console.log(`State updated in useSharedContext with key ${key}:`, message.data);
       }
     };
 
@@ -30,6 +32,7 @@ export function useSharedContext(key = '') {
       key,
       data: newState
     });
+    console.log(`Message sent in useSharedContext with key ${key}:`, newState);
   }, [key, state]);
 
   return [state, updateState, vscode];

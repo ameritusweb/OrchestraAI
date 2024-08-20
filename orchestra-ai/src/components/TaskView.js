@@ -5,6 +5,30 @@ import { useSharedContext } from '../hooks/useSharedContext';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import DatePicker from 'react-datepicker';
 
+const Modal = ({ show, onClose, onConfirm, title, body }) => {
+  if (!show) return null;
+
+  return (
+    <div className="modal d-block" tabIndex={-1} role="dialog">
+      <div className="modal-dialog" role="document">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title">{title}</h5>
+            <button type="button" className="btn-close" onClick={onClose} aria-label="Close"></button>
+          </div>
+          <div className="modal-body">
+            <p>{body}</p>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="button" className="btn btn-primary" onClick={onConfirm}>Confirm</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const TaskView = () => {
   
   const [taskState, updateTaskState] = useSharedContext('taskView');
@@ -13,6 +37,9 @@ const TaskView = () => {
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('priority');
   const [expandedTasks, setExpandedTasks] = useState({});
+
+  const [showModal, setShowModal] = useState(false);
+  const [modalConfig, setModalConfig] = useState({ title: '', body: '', onConfirm: () => {} });
 
   useEffect(() => {
     const now = new Date();
@@ -84,21 +111,37 @@ const TaskView = () => {
   };
 
   const handleDeleteTask = (taskId) => {
-    if (window.confirm('Are you sure you want to delete this task?')) {
-      updateTaskState(prevState => ({
-        ...prevState,
-        tasks: prevState.tasks.filter(t => t.id !== taskId)
-      }));
-    }
+    setModalConfig({
+      title: 'Confirm Deletion',
+      body: 'Are you sure you want to delete this task?',
+      onConfirm: () => {
+        updateTaskState(prevState => ({
+          ...prevState,
+          tasks: prevState.tasks.filter(t => t.id !== taskId)
+        }));
+        setShowModal(false);
+      }
+    });
+    setShowModal(true);
   };
 
   const validateTask = (task) => {
     if (task.title.trim() === '') {
-      alert('Task title cannot be empty');
+      setModalConfig({
+        title: 'Validation Error',
+        body: 'Task title cannot be empty',
+        onConfirm: () => setShowModal(false)
+      });
+      setShowModal(true);
       return false;
     }
     if (tasks.some(t => t.id !== task.id && t.title === task.title)) {
-      alert('Task title must be unique');
+      setModalConfig({
+        title: 'Validation Error',
+        body: 'Task title must be unique',
+        onConfirm: () => setShowModal(false)
+      });
+      setShowModal(true);
       return false;
     }
     return true;
@@ -158,6 +201,13 @@ const TaskView = () => {
           )}
         </Droppable>
       </DragDropContext>
+      <Modal
+        show={showModal}
+        onClose={() => setShowModal(false)}
+        onConfirm={modalConfig.onConfirm}
+        title={modalConfig.title}
+        body={modalConfig.body}
+      />
     </div>
   );
 };
@@ -205,6 +255,9 @@ const TaskEditForm = ({ task, onSave, onCancel }) => {
   const [newSubtask, setNewSubtask] = useState('');
   const [newRelatedTest, setNewRelatedTest] = useState('');
 
+  const [showModal, setShowModal] = useState(false);
+  const [modalConfig, setModalConfig] = useState({ title: '', body: '', onConfirm: () => {} });
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setEditedTask(prevTask => ({ ...prevTask, [name]: value }));
@@ -236,6 +289,15 @@ const TaskEditForm = ({ task, onSave, onCancel }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (editedTask.title.trim() === '') {
+      setModalConfig({
+        title: 'Validation Error',
+        body: 'Task title cannot be empty',
+        onConfirm: () => setShowModal(false)
+      });
+      setShowModal(true);
+      return;
+    }
     onSave(editedTask);
   };
 
@@ -326,6 +388,13 @@ const TaskEditForm = ({ task, onSave, onCancel }) => {
       </div>
       <button type="submit" className="btn btn-primary me-2">Save</button>
       <button type="button" className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+      <Modal
+        show={showModal}
+        onClose={() => setShowModal(false)}
+        onConfirm={modalConfig.onConfirm}
+        title={modalConfig.title}
+        body={modalConfig.body}
+      />
     </form>
   );
 };
