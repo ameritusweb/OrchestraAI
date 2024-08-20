@@ -17,6 +17,9 @@ export const initialState = {
     },
     taskView: {
       tasks: []
+    },
+    versionControlView: {
+      fileSystem: {}
     }
     // Add any other initial state properties here
   };
