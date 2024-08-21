@@ -4,13 +4,14 @@ import PropTypes from 'prop-types';
 const TabsContext = createContext({
     activeTab: '', // Default value for the active tab
     setActiveTab: (tab) => {}, // No-op function as a placeholder
+    onValueChange: (value) => {}, // No-op function as a placeholder
   });
 
-export const Tabs = ({ defaultValue, children }) => {
+export const Tabs = ({ defaultValue, children, onValueChange }) => {
   const [activeTab, setActiveTab] = useState(defaultValue);
 
   return (
-    <TabsContext.Provider value={{ activeTab, setActiveTab }}>
+    <TabsContext.Provider value={{ activeTab, setActiveTab, onValueChange }}>
       <div className="tabs">{children}</div>
     </TabsContext.Provider>
   );
@@ -19,11 +20,12 @@ export const Tabs = ({ defaultValue, children }) => {
 Tabs.propTypes = {
   defaultValue: PropTypes.string.isRequired,
   children: PropTypes.node.isRequired,
+  onValueChange: PropTypes.func,
 };
 
-export const TabsList = ({ children }) => {
+export const TabsList = ({ children, className }) => {
   return (
-    <ul className="nav nav-tabs mb-3" role="tablist">
+    <ul className={`nav nav-tabs mb-3 ${className}`} role="tablist">
       {children}
     </ul>
   );
@@ -31,6 +33,7 @@ export const TabsList = ({ children }) => {
 
 TabsList.propTypes = {
   children: PropTypes.node.isRequired,
+  className: PropTypes.string,
 };
 
 export const TabsTrigger = ({ value, children }) => {

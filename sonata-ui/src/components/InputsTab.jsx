@@ -33,7 +33,7 @@ const InputsTab = ({ previewInputs, handleInputChange }) => {
               </SelectTrigger>
               <SelectContent>
                 {(element.options || []).map((option, index) => (
-                  <SelectItem key={index} value={option}>{option}</SelectItem>
+                  <SelectItem key={`${index}`} value={option}>{option}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

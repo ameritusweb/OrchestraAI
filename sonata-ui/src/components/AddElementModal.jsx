@@ -80,7 +80,7 @@ const AddElementModal = ({ isOpen, onClose, onAddElement }) => {
           <TabsContent value="icon">
             <ScrollArea className="h-[300px] w-full rounded-md border p-4">
               <div className="grid grid-cols-4 gap-4">
-                {Object.keys(LucideIcons).map((iconName) => {
+                {/* {Object.keys(LucideIcons).map((iconName) => {
                   const IconComponent = LucideIcons[iconName];
                   return (
                     <Button
@@ -93,7 +93,7 @@ const AddElementModal = ({ isOpen, onClose, onAddElement }) => {
                       <span className="text-xs">{iconName}</span>
                     </Button>
                   );
-                })}
+                })} */}
               </div>
             </ScrollArea>
           </TabsContent>

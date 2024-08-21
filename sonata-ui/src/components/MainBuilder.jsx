@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/ui/button.jsx"
 import { Badge } from "@/ui/badge.jsx"
-import { Plus, Search, Box, Type, Input as InputIcon, X, SquareAsterisk, Heading1, Heading2, List, Image, Link, Moon, Sun, Smartphone, Tablet, Monitor, BookOpen, Tag, CheckSquare, ToggleLeft, ChevronDown, Sliders } from 'lucide-react';
+import { Plus, Search, Box, Type, TextCursorInput as InputIcon, X, SquareAsterisk, Heading1, Heading2, List, Image, Link, Moon, Sun, Smartphone, Tablet, Monitor, BookOpen, Tag, CheckSquare, ToggleLeft, ChevronDown, Sliders } from 'lucide-react';
 import AddElementModal from './AddElementModal.jsx';
 
 const ElementTypes = {

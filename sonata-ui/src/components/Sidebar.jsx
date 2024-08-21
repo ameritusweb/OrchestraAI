@@ -2,7 +2,7 @@ import React from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/ui/accordion.jsx';
 import { Button } from "@/ui/button.jsx"
 import { Input } from "@/ui/input.jsx"
-import { Label } from "@/ui/label.jsx"
+import { Tabs, TabsTrigger, TabsContent, TabsList } from "@/ui/tabs.jsx"
 import { Plus, Search } from 'lucide-react';
 import { ElementTypes, tailwindCategories, TailwindPrefixes } from '../constants.js';
 
@@ -59,7 +59,7 @@ const Sidebar = ({
             <TabsContent value="classes">
               <Accordion type="multiple">
                 {filteredCategories.map((category, index) => (
-                  <AccordionItem value={`category-${index}`} key={index}>
+                  <AccordionItem value={`category-${index}`} key={`${index}`}>
                     <AccordionTrigger>{category.name}</AccordionTrigger>
                     <AccordionContent>
                       {category.subcategories.map((subcategory, subIndex) => (

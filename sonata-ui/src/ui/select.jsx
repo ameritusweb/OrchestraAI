@@ -70,7 +70,7 @@ SelectContent.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-export const SelectItem = ({ children, key, value }) => {
+export const SelectItem = ({ children, value }) => {
   const { onValueChange, setIsOpen } = useContext(SelectContext);
 
   const handleClick = () => {
@@ -79,7 +79,7 @@ export const SelectItem = ({ children, key, value }) => {
   };
 
   return (
-    <li key={key}>
+    <li>
       <a className="dropdown-item" href="#" onClick={handleClick}>
         {children}
       </a>
@@ -89,6 +89,5 @@ export const SelectItem = ({ children, key, value }) => {
 
 SelectItem.propTypes = {
   children: PropTypes.node.isRequired,
-  key: PropTypes.string,
   value: PropTypes.string.isRequired,
 };
