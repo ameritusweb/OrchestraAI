@@ -246,7 +246,7 @@ const TailwindBuilder = () => {
   }, [containers, previewInputs, isDarkMode, classToggles]);
 
   const handleDragStart = (e, className) => {
-    e.dataTransfer.setData('text/plain', className);
+    e.dataTransfer.setData('text/plain', `class:${className}`);
   };
 
   const addEvent = () => {

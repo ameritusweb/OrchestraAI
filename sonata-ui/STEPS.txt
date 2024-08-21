@@ -1,0 +1,1684 @@
+> I want UI components that share the same syntax as shadcn/ui components, but are created using Bootstrap 5 instead.
+> They should be in the format of JSX files with appropriate prop types and JSDoc comments
+
+> Here is an Accordion:
+
+import React, { createContext, useContext, useState } from 'react';
+import PropTypes from 'prop-types';
+
+const AccordionContext = createContext({
+    itemValue: '', // Default value for the item
+    openItems: new Set(), // Default value for the open items
+    toggleItem: (itemId) => {}, // No-op function as a placeholder
+    type: 'single', // Default value for the accordion type
+    isOpen: false, // Default value for the item open state
+});
+
+export const Accordion = ({ type, children }) => {
+  const [openItems, setOpenItems] = useState(new Set());
+
+  const toggleItem = (itemId) => {
+    setOpenItems((prevOpenItems) => {
+      const newOpenItems = new Set(prevOpenItems);
+      if (type === "single") {
+        newOpenItems.clear();
+      }
+      if (newOpenItems.has(itemId)) {
+        newOpenItems.delete(itemId);
+      } else {
+        newOpenItems.add(itemId);
+      }
+      return newOpenItems;
+    });
+  };
+
+  return (
+    <AccordionContext.Provider value={{ openItems, toggleItem, type, isOpen: false, itemValue: '' }}>
+      <div className="accordion">{children}</div>
+    </AccordionContext.Provider>
+  );
+};
+
+Accordion.propTypes = {
+  type: PropTypes.oneOf(['single', 'multiple']).isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+export const AccordionItem = ({ key, value, children }) => {
+  const { openItems } = useContext(AccordionContext);
+  const isOpen = openItems.has(value);
+
+  return (
+    <div key={key} className="accordion-item">
+      <AccordionContext.Provider value={{ ...useContext(AccordionContext), itemValue: value, isOpen }}>
+        {children}
+      </AccordionContext.Provider>
+    </div>
+  );
+};
+
+AccordionItem.propTypes = {
+  key: PropTypes.string,
+  value: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+export const AccordionTrigger = ({ children }) => {
+  const { itemValue, isOpen, toggleItem } = useContext(AccordionContext);
+
+  return (
+    <h2 className="accordion-header">
+      <button
+        className={`accordion-button ${isOpen ? '' : 'collapsed'}`}
+        type="button"
+        onClick={() => toggleItem(itemValue)}
+        aria-expanded={isOpen}
+      >
+        {children}
+      </button>
+    </h2>
+  );
+};
+
+AccordionTrigger.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const AccordionContent = ({ children }) => {
+  const { itemValue, isOpen } = useContext(AccordionContext);
+
+  return (
+    <div
+      id={`accordion-${itemValue}`}
+      className={`accordion-collapse collapse ${isOpen ? 'show' : ''}`}
+    >
+      <div className="accordion-body">{children}</div>
+    </div>
+  );
+};
+
+AccordionContent.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+> Here is a Badge:
+
+import React from 'react';
+import PropTypes from 'prop-types';
+
+export const Badge = ({ variant, className, children, ...props }) => {
+  const baseClass = 'badge';
+  const variantClass = variant === 'outline' ? 'text-primary bg-light border border-primary' : 'bg-primary text-light';
+  
+  return (
+    <span 
+      className={`${baseClass} ${variantClass} ${className || ''}`}
+      {...props}
+    >
+      {children}
+    </span>
+  );
+};
+
+Badge.propTypes = {
+  variant: PropTypes.oneOf(['outline', 'default']),
+  className: PropTypes.string,
+  children: PropTypes.node.isRequired,
+};
+
+Badge.defaultProps = {
+  variant: 'default',
+};
+
+// Additional CSS for custom styling
+const badgeStyles = `
+.badge {
+  font-size: 0.75em;
+  font-weight: 600;
+  padding: 0.35em 0.65em;
+  border-radius: 0.25rem;
+}
+
+.badge.text-primary.bg-light {
+  background-color: transparent !important;
+}
+
+.mr-1 {
+  margin-right: 0.25rem !important;
+}
+
+.mb-1 {
+  margin-bottom: 0.25rem !important;
+}
+`;
+
+> Here is a button
+
+import React from 'react';
+import PropTypes from 'prop-types';
+
+/**
+ * @typedef {Object} ButtonProps
+ * @property {React.ReactNode} children - The content inside the button.
+ * @property {'sm' | 'md' | 'lg'} [size] - The size of the button.
+ * @property {'outline' | 'solid' | 'destructive'} [variant] - The variant of the button.
+ * @property {string} [className] - Additional CSS classes to apply to the button.
+ * @property {React.MouseEventHandler<HTMLButtonElement>} [onClick] - Callback function to handle button clicks.
+ * @property {React.Ref<HTMLButtonElement>} [ref] - Ref for the button element.
+ */
+
+/**
+ * Button component
+ * @type {React.ForwardRefExoticComponent<Omit<ButtonProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>}
+ */
+export const Button = React.forwardRef(
+  ({ children, size = 'md', variant = 'solid', className, onClick, ...props }, ref) => {
+    const sizeClass = size === 'sm' ? 'btn-sm' : '';
+    let variantClass = '';
+
+    switch (variant) {
+      case 'outline':
+        variantClass = 'btn-outline-primary';
+        break;
+      case 'destructive':
+        variantClass = 'btn-danger'; // Use Bootstrap's `btn-danger` for destructive actions
+        break;
+      default:
+        variantClass = 'btn-primary';
+        break;
+    }
+
+    return (
+      <button
+        ref={ref}
+        className={`btn ${sizeClass} ${variantClass} ${className || ''}`}
+        onClick={onClick}
+        {...props}
+      >
+        {children}
+      </button>
+    );
+  }
+);
+
+Button.displayName = 'Button';
+
+Button.propTypes = {
+  children: PropTypes.node.isRequired,
+  size: PropTypes.oneOf(['sm', 'md', 'lg']),
+  variant: PropTypes.oneOf(['outline', 'solid', 'destructive']),
+  className: PropTypes.string,
+  onClick: PropTypes.func,
+};
+
+> Here is a Card
+
+import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
+
+export const Card = ({ children }) => {
+    return <div className="card">{children}</div>;
+  };
+  
+  Card.propTypes = {
+    children: PropTypes.node.isRequired,
+  };
+  
+  export const CardHeader = ({ children }) => {
+    return <div className="card-header">{children}</div>;
+  };
+  
+  CardHeader.propTypes = {
+    children: PropTypes.node.isRequired,
+  };
+  
+  export const CardTitle = ({ children }) => {
+    return <h5 className="card-title">{children}</h5>;
+  };
+  
+  CardTitle.propTypes = {
+    children: PropTypes.node.isRequired,
+  };
+  
+  export const CardContent = ({ children }) => {
+    return <div className="card-body">{children}</div>;
+  };
+  
+  CardContent.propTypes = {
+    children: PropTypes.node.isRequired,
+  };
+  
+  export const CardDescription = ({ children }) => {
+    return <p className="card-text">{children}</p>;
+  };
+  
+  CardDescription.propTypes = {
+    children: PropTypes.node.isRequired,
+  };
+  
+  export const CardFooter = ({ children, className }) => {
+    return <div className={`card-footer ${className || ''}`}>{children}</div>;
+  };
+  
+  CardFooter.propTypes = {
+    children: PropTypes.node.isRequired,
+    className: PropTypes.string,
+  };
+
+> Here is a Checkbox
+
+import React from 'react';
+import PropTypes from 'prop-types';
+
+/**
+ * Checkbox component that renders a styled checkbox input with a label.
+ *
+ * @type {React.ForwardRefExoticComponent<React.PropsWithoutRef<CheckboxProps> & React.RefAttributes<HTMLInputElement>>}
+ * @param {CheckboxProps} props - The props for the component.
+ * @param {React.Ref<HTMLInputElement>} ref - The ref to attach to the checkbox input element.
+ * @returns {JSX.Element} The rendered checkbox component.
+ */
+export const Checkbox = React.forwardRef(
+  ({ id, checked, onCheckedChange, className, ...props }, ref) => {
+    return (
+      <div className={`form-check ${className || ''}`}>
+        <input
+          type="checkbox"
+          className="form-check-input"
+          id={id}
+          checked={checked}
+          onChange={(e) => onCheckedChange(e.target.checked)}
+          ref={ref}
+          {...props}
+        />
+        <label className="form-check-label" htmlFor={id}>
+          {props.label}
+        </label>
+      </div>
+    );
+  }
+);
+
+Checkbox.displayName = 'Checkbox';
+
+Checkbox.propTypes = {
+  id: PropTypes.string.isRequired,
+  checked: PropTypes.bool,
+  onCheckedChange: PropTypes.func.isRequired,
+  className: PropTypes.string,
+  label: PropTypes.string,
+};
+
+Checkbox.defaultProps = {
+  checked: false,
+};
+
+/**
+ * @typedef {Object} CheckboxProps
+ * @property {string} id - The ID for the checkbox input and label.
+ * @property {boolean} [checked=false] - Whether the checkbox is checked.
+ * @property {function(boolean): void} onCheckedChange - Callback function to handle changes in the checkbox state.
+ * @property {string} [className] - Additional CSS classes to apply to the checkbox container.
+ * @property {string} [label] - The label text to display next to the checkbox.
+ */
+
+
+// Additional CSS for custom styling (optional)
+const checkboxStyles = `
+.form-check-input:checked {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.form-check-input:focus {
+  border-color: #86b7fe;
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+`;
+
+> Here is a Dialog
+
+import React, { useRef, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { Modal } from 'bootstrap';
+
+export const AlertDialog = ({ open, onOpenChange, children }) => {
+    const modalRef = useRef(null);
+  
+    useEffect(() => {
+      const modalElement = modalRef.current;
+      const modalInstance = new Modal(modalElement, {
+        backdrop: 'static',
+        keyboard: false
+      });
+  
+      if (open) {
+        modalInstance.show();
+      } else {
+        modalInstance.hide();
+      }
+  
+      modalElement.addEventListener('hidden.bs.modal', () => onOpenChange(false));
+  
+      return () => {
+        modalInstance.dispose();
+      };
+    }, [open, onOpenChange]);
+  
+    return (
+      <div className="modal fade" tabIndex={-1} ref={modalRef}>
+        <div className="modal-dialog">
+          {children}
+        </div>
+      </div>
+    );
+  };
+  
+  AlertDialog.propTypes = {
+    open: PropTypes.bool.isRequired,
+    onOpenChange: PropTypes.func.isRequired,
+    children: PropTypes.node.isRequired,
+  };
+
+  export const Dialog = ({ open, onOpenChange, children }) => {
+    const modalRef = useRef(null);
+  
+    useEffect(() => {
+      const modalElement = modalRef.current;
+      const modalInstance = new Modal(modalElement, {
+        backdrop: 'static',
+        keyboard: false
+      });
+  
+      if (open) {
+        modalInstance.show();
+      } else {
+        modalInstance.hide();
+      }
+  
+      modalElement.addEventListener('hidden.bs.modal', () => onOpenChange(false));
+  
+      return () => {
+        modalInstance.dispose();
+      };
+    }, [open, onOpenChange]);
+  
+    return (
+      <div className="modal fade" tabIndex={-1} ref={modalRef}>
+        <div className="modal-dialog">
+          {children}
+        </div>
+      </div>
+    );
+  };
+  
+  Dialog.propTypes = {
+    open: PropTypes.bool.isRequired,
+    onOpenChange: PropTypes.func.isRequired,
+    children: PropTypes.node.isRequired,
+  };
+
+// Shared content components
+export const DialogContent = ({ children, className }) => (
+  <div className={`modal-content ${className}`}>
+    {children}
+  </div>
+);
+DialogContent.propTypes = {
+  children: PropTypes.node.isRequired,
+  className: PropTypes.string,
+};
+
+export const AlertDialogContent = ({ children }) => (
+  <div className="modal-content">
+    {children}
+  </div>
+);
+AlertDialogContent.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const DialogHeader = ({ children }) => (
+  <div className="modal-header">
+    {children}
+  </div>
+);
+DialogHeader.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const AlertDialogHeader = ({ children }) => (
+  <div className="modal-header">
+    {children}
+  </div>
+);
+AlertDialogHeader.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const DialogTitle = ({ children }) => (
+  <h5 className="modal-title">{children}</h5>
+);
+DialogTitle.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const AlertDialogTitle = ({ children }) => (
+  <h5 className="modal-title">{children}</h5>
+);
+AlertDialogTitle.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const DialogDescription = ({ children }) => (
+  <p>{children}</p>
+);
+DialogDescription.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const AlertDialogDescription = ({ children }) => (
+  <p>{children}</p>
+);
+AlertDialogDescription.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const DialogFooter = ({ children }) => (
+  <div className="modal-footer">
+    {children}
+  </div>
+);
+DialogFooter.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const AlertDialogFooter = ({ children }) => (
+  <div className="modal-footer">
+    {children}
+  </div>
+);
+AlertDialogFooter.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+// Specific button components for AlertDialog
+export const AlertDialogCancel = ({ children, ...props }) => (
+  <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" {...props}>
+    {children}
+  </button>
+);
+AlertDialogCancel.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const AlertDialogAction = ({ children, ...props }) => (
+  <button type="button" className="btn btn-primary" {...props}>
+    {children}
+  </button>
+);
+AlertDialogAction.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+
+> Here is a Dropdown Menu
+
+import React from 'react';
+import PropTypes from 'prop-types';
+
+// DropdownMenu components
+export const DropdownMenu = ({ children }) => {
+  return <div className="dropdown">{children}</div>;
+};
+
+DropdownMenu.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const DropdownMenuTrigger = ({ asChild, children }) => {
+  const TriggerComponent = asChild ? React.Children.only(children).type : 'button';
+  
+  return (
+    <TriggerComponent
+      className="dropdown-toggle"
+      type="button"
+      data-bs-toggle="dropdown"
+      aria-expanded="false"
+    >
+      {children}
+    </TriggerComponent>
+  );
+};
+
+DropdownMenuTrigger.propTypes = {
+  asChild: PropTypes.bool,
+  children: PropTypes.node.isRequired,
+};
+
+export const DropdownMenuContent = ({ children }) => {
+  return <ul className="dropdown-menu">{children}</ul>;
+};
+
+DropdownMenuContent.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const DropdownMenuItem = ({ onSelect, children }) => {
+  return (
+    <li>
+      <a className="dropdown-item" href="#" onClick={(e) => {
+        e.preventDefault();
+        onSelect();
+      }}>
+        {children}
+      </a>
+    </li>
+  );
+};
+
+DropdownMenuItem.propTypes = {
+  onSelect: PropTypes.func.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+> Here is an Input
+
+import React from 'react';
+import PropTypes from 'prop-types';
+
+/**
+ * Input component that renders a styled input element.
+ *
+ * @type {React.ForwardRefExoticComponent<React.PropsWithoutRef<InputProps> & React.RefAttributes<HTMLInputElement>>}
+ * @param {InputProps} props - The props for the component.
+ * @param {React.Ref<HTMLInputElement>} ref - The ref to attach to the input element.
+ * @returns {JSX.Element} The rendered input element.
+ */
+export const Input = React.forwardRef(
+  ({ className, id, type = 'text', ...props }, ref) => {
+    return (
+      <input
+        id={id}
+        type={type}
+        className={`form-control ${className || ''}`}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+
+Input.displayName = 'Input';
+
+Input.propTypes = {
+  className: PropTypes.string,
+  id: PropTypes.string,
+  type: PropTypes.string,
+  value: PropTypes.string,
+  onChange: PropTypes.func,
+  placeholder: PropTypes.string,
+};
+
+/**
+ * @typedef {Object} InputProps
+ * @property {string} [className] - Additional CSS classes to apply to the input.
+ * @property {string} [id] - The ID for the input element.
+ * @property {string} [type='text'] - The type of the input (e.g., "text", "password").
+ * @property {string} [value] - The value of the input.
+ * @property {React.ChangeEventHandler<HTMLInputElement>} [onChange] - Callback function to handle input changes.
+ * @property {string} [placeholder] - Placeholder text for the input.
+ */
+
+
+> Here is a Label
+
+import React from 'react';
+import PropTypes from 'prop-types';
+
+export const Label = ({ htmlFor, children, className }) => {
+    return (
+      <label htmlFor={htmlFor} className={`form-check-label ${className || ''}`}>
+        {children}
+      </label>
+    );
+  };
+  
+  Label.propTypes = {
+    htmlFor: PropTypes.string,
+    children: PropTypes.node.isRequired,
+    className: PropTypes.string,
+  };
+
+> Here is a Popover
+
+import React, { useState, useEffect, useRef, cloneElement } from 'react';
+import PropTypes from 'prop-types';
+import { Popover as BSPopover } from 'bootstrap';
+
+export const Popover = ({ children, open }) => {
+  const [isOpen, setIsOpen] = useState(open);
+  const triggerRef = useRef(null);
+  const contentRef = useRef(null);
+  const popoverRef = useRef(null);
+
+  useEffect(() => {
+    if (triggerRef.current && contentRef.current) {
+      popoverRef.current = new BSPopover(triggerRef.current, {
+        content: contentRef.current,
+        html: true,
+        trigger: 'manual',
+        placement: 'auto',
+      });
+    }
+    return () => {
+      if (popoverRef.current) {
+        popoverRef.current.dispose();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (popoverRef.current) {
+      if (isOpen) {
+        popoverRef.current.show();
+      } else {
+        popoverRef.current.hide();
+      }
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    setIsOpen(open);
+  }, [open]);
+
+  return (
+    <>
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child, { triggerRef, contentRef });
+        }
+        return child;
+      })}
+    </>
+  );
+};
+
+Popover.propTypes = {
+  children: PropTypes.node.isRequired,
+  open: PropTypes.bool,
+};
+
+export const PopoverTrigger = ({ children, triggerRef }) => {
+  return React.cloneElement(children, { ref: triggerRef });
+};
+
+PopoverTrigger.propTypes = {
+  children: PropTypes.element.isRequired,
+  triggerRef: PropTypes.oneOfType([
+    PropTypes.func, 
+    PropTypes.shape({ current: PropTypes.instanceOf(Element) })
+  ]),
+};
+
+export const PopoverContent = ({ children, contentRef }) => {
+  return <div ref={contentRef}>{children}</div>;
+};
+
+PopoverContent.propTypes = {
+  children: PropTypes.node.isRequired,
+  contentRef: PropTypes.oneOfType([
+    PropTypes.func, 
+    PropTypes.shape({ current: PropTypes.instanceOf(Element) })
+  ]),
+};
+
+
+> Here is a Resizable
+
+import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
+
+const useResizable = (defaultSize, minSize = 10, maxSize = 90) => {
+  const [size, setSize] = useState(defaultSize);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const startSize = useRef(0);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging.current) return;
+      const dx = e.clientX - startX.current;
+      const newSize = Math.min(Math.max(startSize.current + dx / window.innerWidth * 100, minSize), maxSize);
+      setSize(newSize);
+    };
+
+    const handleMouseUp = () => {
+      isDragging.current = false;
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [minSize, maxSize]);
+
+  const startResize = (e) => {
+    isDragging.current = true;
+    startX.current = e.clientX;
+    startSize.current = size;
+  };
+
+  return [size, startResize];
+};
+
+export const ResizablePanel = ({ defaultSize, children }) => {
+  const [size, startResize] = useResizable(defaultSize);
+
+  return (
+    <div className="d-flex flex-column h-100" style={{ width: `${size}%` }}>
+      {children}
+      <div
+        className="resizer"
+        style={{
+          width: '10px',
+          cursor: 'col-resize',
+          backgroundColor: '#f0f0f0',
+          position: 'absolute',
+          right: 0,
+          top: 0,
+          bottom: 0,
+        }}
+        onMouseDown={startResize}
+      />
+    </div>
+  );
+};
+
+ResizablePanel.propTypes = {
+  defaultSize: PropTypes.number.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+export const ResizablePanelGroup = ({ direction, children }) => {
+  return (
+    <div className={`d-flex ${direction === 'horizontal' ? 'flex-row' : 'flex-column'} h-100`}>
+      {children}
+    </div>
+  );
+};
+
+ResizablePanelGroup.propTypes = {
+  direction: PropTypes.oneOf(['horizontal', 'vertical']).isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+> Here is a Scroll Area
+
+import React from 'react';
+import PropTypes from 'prop-types';
+
+export const ScrollArea = ({ className, children, ...props }) => {
+  return (
+    <div className={`scroll-area ${className || ''}`} {...props}>
+      {children}
+    </div>
+  );
+};
+
+ScrollArea.propTypes = {
+  className: PropTypes.string,
+  children: PropTypes.node.isRequired,
+};
+
+// CSS to be added to your project
+const scrollAreaStyles = `
+.scroll-area {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #6c757d transparent;
+}
+
+.scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-area::-webkit-scrollbar-thumb {
+  background-color: #6c757d;
+  border-radius: 3px;
+}
+`;
+
+> Here is a Select
+
+import React, { createContext, useContext, useState } from 'react';
+import PropTypes from 'prop-types';
+
+const SelectContext = createContext({
+    value: '',
+    onValueChange: (value) => {},
+    isOpen: false,
+    setIsOpen: (isOpen) => {},
+  });
+
+export const Select = ({ children, value, onValueChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <SelectContext.Provider value={{ value, onValueChange, isOpen, setIsOpen }}>
+      <div className="dropdown">
+        {children}
+      </div>
+    </SelectContext.Provider>
+  );
+};
+
+Select.propTypes = {
+  children: PropTypes.node.isRequired,
+  value: PropTypes.string,
+  onValueChange: PropTypes.func.isRequired,
+};
+
+export const SelectTrigger = ({ className, children }) => {
+  const { isOpen, setIsOpen } = useContext(SelectContext);
+
+  return (
+    <button
+      className={`btn btn-secondary dropdown-toggle w-100 text-start ${className}`}
+      type="button"
+      onClick={() => setIsOpen(!isOpen)}
+      aria-expanded={isOpen}
+    >
+      {children}
+    </button>
+  );
+};
+
+SelectTrigger.propTypes = {
+    className: PropTypes.string,
+  children: PropTypes.node.isRequired,
+};
+
+export const SelectValue = ({ placeholder }) => {
+  const { value } = useContext(SelectContext);
+
+  return <span>{value || placeholder}</span>;
+};
+
+SelectValue.propTypes = {
+  placeholder: PropTypes.string,
+};
+
+export const SelectContent = ({ children }) => {
+  const { isOpen } = useContext(SelectContext);
+
+  return (
+    <ul className={`dropdown-menu w-100 ${isOpen ? 'show' : ''}`}>
+      {children}
+    </ul>
+  );
+};
+
+SelectContent.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const SelectItem = ({ children, key, value }) => {
+  const { onValueChange, setIsOpen } = useContext(SelectContext);
+
+  const handleClick = () => {
+    onValueChange(value);
+    setIsOpen(false);
+  };
+
+  return (
+    <li key={key}>
+      <a className="dropdown-item" href="#" onClick={handleClick}>
+        {children}
+      </a>
+    </li>
+  );
+};
+
+SelectItem.propTypes = {
+  children: PropTypes.node.isRequired,
+  key: PropTypes.string,
+  value: PropTypes.string.isRequired,
+};
+
+
+> Here is a Slider
+
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+
+export const Slider = ({ id, min, max, step, value, onValueChange }) => {
+  const [localValue, setLocalValue] = useState(value[0]);
+
+  useEffect(() => {
+    setLocalValue(value[0]);
+  }, [value]);
+
+  const handleChange = (e) => {
+    const newValue = parseFloat(e.target.value);
+    setLocalValue(newValue);
+    onValueChange([newValue]);
+  };
+
+  return (
+    <div className="slider-container">
+      <input
+        type="range"
+        className="form-range"
+        id={id}
+        min={min}
+        max={max}
+        step={step}
+        value={localValue}
+        onChange={handleChange}
+      />
+      <div className="slider-value">{localValue}</div>
+    </div>
+  );
+};
+
+Slider.propTypes = {
+  id: PropTypes.string.isRequired,
+  min: PropTypes.number,
+  max: PropTypes.number,
+  step: PropTypes.number,
+  value: PropTypes.arrayOf(PropTypes.number).isRequired,
+  onValueChange: PropTypes.func.isRequired,
+};
+
+Slider.defaultProps = {
+  min: 0,
+  max: 100,
+  step: 1,
+};
+
+// CSS to be added to your project
+const sliderStyles = `
+.slider-container {
+  position: relative;
+  padding: 10px 0;
+}
+
+.slider-value {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #007bff;
+  color: white;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+}
+
+.form-range::-webkit-slider-thumb {
+  background: #007bff;
+}
+
+.form-range::-moz-range-thumb {
+  background: #007bff;
+}
+
+.form-range::-ms-thumb {
+  background: #007bff;
+}
+`;
+
+> Here is a Steps
+
+import React from 'react';
+import PropTypes from 'prop-types';
+
+const StepContext = React.createContext({
+  current: 0,
+  onChange: (current) => {},
+  totalSteps: 0,
+});
+
+export const Steps = ({ current, onChange, children }) => {
+  const totalSteps = React.Children.count(children);
+
+  return (
+    <StepContext.Provider value={{ current, onChange, totalSteps }}>
+      <div className="steps d-flex justify-content-between align-items-center">
+        {React.Children.map(children, (child, index) =>
+          React.cloneElement(child, { index, totalSteps })
+        )}
+      </div>
+    </StepContext.Provider>
+  );
+};
+
+Steps.propTypes = {
+  current: PropTypes.number.isRequired,
+  onChange: PropTypes.func.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+const Step = ({ index, title, totalSteps }) => {
+  const { current, onChange } = React.useContext(StepContext);
+
+  const status =
+    index < current ? 'complete' : index === current ? 'current' : 'upcoming';
+
+  return (
+    <div
+      className={`step ${status} ${index === 0 ? 'first' : ''} ${
+        index === totalSteps - 1 ? 'last' : ''
+      }`}
+      onClick={() => onChange(index)}
+    >
+      <div className="step-indicator">{status === 'complete' ? '✓' : index + 1}</div>
+      <div className="step-title">{title}</div>
+    </div>
+  );
+};
+
+Step.propTypes = {
+  index: PropTypes.number,
+  title: PropTypes.string.isRequired,
+  totalSteps: PropTypes.number.isRequired,
+};
+
+Steps.Step = Step;
+
+
+> Here is a Switch
+
+import React from 'react';
+import PropTypes from 'prop-types';
+
+export const Switch = ({ id, checked, onCheckedChange }) => {
+  return (
+    <div className="form-check form-switch">
+      <input
+        className="form-check-input"
+        type="checkbox"
+        role="switch"
+        id={id}
+        checked={checked}
+        onChange={(e) => onCheckedChange(e.target.checked)}
+      />
+    </div>
+  );
+};
+
+Switch.propTypes = {
+  id: PropTypes.string,
+  checked: PropTypes.bool.isRequired,
+  onCheckedChange: PropTypes.func.isRequired,
+};
+
+> Here is a Tabs
+
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+
+const TabsContext = createContext({
+    activeTab: '', // Default value for the active tab
+    setActiveTab: (tab) => {}, // No-op function as a placeholder
+  });
+
+export const Tabs = ({ defaultValue, children }) => {
+  const [activeTab, setActiveTab] = useState(defaultValue);
+
+  return (
+    <TabsContext.Provider value={{ activeTab, setActiveTab }}>
+      <div className="tabs">{children}</div>
+    </TabsContext.Provider>
+  );
+};
+
+Tabs.propTypes = {
+  defaultValue: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+export const TabsList = ({ children }) => {
+  return (
+    <ul className="nav nav-tabs mb-3" role="tablist">
+      {children}
+    </ul>
+  );
+};
+
+TabsList.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const TabsTrigger = ({ value, children }) => {
+  const { activeTab, setActiveTab } = useContext(TabsContext);
+
+  return (
+    <li className="nav-item" role="presentation">
+      <button
+        className={`nav-link ${activeTab === value ? 'active' : ''}`}
+        id={`${value}-tab`}
+        data-bs-toggle="tab"
+        data-bs-target={`#${value}`}
+        type="button"
+        role="tab"
+        aria-controls={value}
+        aria-selected={activeTab === value}
+        onClick={() => setActiveTab(value)}
+      >
+        {children}
+      </button>
+    </li>
+  );
+};
+
+TabsTrigger.propTypes = {
+  value: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+export const TabsContent = ({ value, children }) => {
+  const { activeTab } = useContext(TabsContext);
+
+  return (
+    <div
+      className={`tab-pane fade ${activeTab === value ? 'show active' : ''}`}
+      id={value}
+      role="tabpanel"
+      aria-labelledby={`${value}-tab`}
+    >
+      {children}
+    </div>
+  );
+};
+
+TabsContent.propTypes = {
+  value: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+> Here is a Textarea
+
+import React from 'react';
+import PropTypes from 'prop-types';
+
+/**
+ * Textarea component that renders a styled textarea element.
+ *
+ * @type {React.ForwardRefExoticComponent<React.PropsWithoutRef<TextareaProps> & React.RefAttributes<HTMLTextAreaElement>>}
+ * @param {TextareaProps} props - The props for the component.
+ * @param {React.Ref<HTMLTextAreaElement>} ref - The ref to attach to the textarea element.
+ * @returns {JSX.Element} The rendered textarea element.
+ */
+export const Textarea = React.forwardRef(
+  ({ className, ...props }, ref) => {
+    return (
+      <textarea
+        className={`form-control ${className || ''}`}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+
+Textarea.displayName = 'Textarea';
+
+Textarea.propTypes = {
+  className: PropTypes.string,
+  placeholder: PropTypes.string,
+  value: PropTypes.string,
+  onChange: PropTypes.func,
+};
+
+/**
+ * @typedef {Object} TextareaProps
+ * @property {string} [className] - Additional CSS classes to apply to the textarea.
+ * @property {string} [placeholder] - Placeholder text for the textarea.
+ * @property {string} [value] - The value of the textarea.
+ * @property {React.ChangeEventHandler<HTMLTextAreaElement>} [onChange] - Callback function to handle textarea changes.
+ */
+
+
+> Here is a Tree
+
+import React, { createContext, useContext, useState } from 'react';
+import PropTypes from 'prop-types';
+
+const TreeContext = createContext({});
+
+export const Tree = ({ children }) => {
+  return (
+    <TreeContext.Provider value={{}}>
+      <ul className="list-unstyled">{children}</ul>
+    </TreeContext.Provider>
+  );
+};
+
+Tree.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const TreeItem = ({ id, key, label, children }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const hasChildren = React.Children.count(children) > 0;
+
+  const toggleOpen = () => {
+    setIsOpen(!isOpen);
+  };
+
+  return (
+    <li key={key}>
+      <div className="d-flex align-items-center">
+        {hasChildren && (
+          <button
+            className="btn btn-sm me-2"
+            onClick={toggleOpen}
+            aria-expanded={isOpen}
+          >
+            {isOpen ? '▼' : '▶'}
+          </button>
+        )}
+        <span>{label}</span>
+      </div>
+      {hasChildren && isOpen && (
+        <ul className="list-unstyled ms-4 mt-2">{children}</ul>
+      )}
+    </li>
+  );
+};
+
+TreeItem.propTypes = {
+  id: PropTypes.string.isRequired,
+  key: PropTypes.string,
+  label: PropTypes.string.isRequired,
+  children: PropTypes.node,
+};
+
+// Custom CSS to be added to your project
+const treeStyles = `
+.tree-item {
+  cursor: pointer;
+}
+.tree-item:hover {
+  background-color: #f8f9fa;
+}
+`;
+
+> Thank you.
+
+> I had a vision of a drag and drop HTML builder using tailwind. It would be built with React 18.
+> It would use these components that we just created.
+> There would be tailwind classes on the left side with accordions for each type of tailwind class, and inside the accordions, there would be the specific tailwind classes
+> On the right, you would have containers inside of containers. Where each container would be a div.
+> Then you would have rectangular containers that would represent inputs, spans, etc.
+> You can drag and drop the tailwind classes from the left onto each container.
+> So the containers would not look like UI elements, but would just be boxes with icons on the top left of them representing their type.
+
+> Each container at the top right, would have a '+' icon.
+> When you click the '+' icon, a dialog or modal would appear with multiple tabs.
+> There would be a tab for containers, a tab for inputs, a tab for icons, and a tab for other.
+> The containers could be flex centered, flex row, flex column, absolute, fixed, or relative.
+> The inputs should allow for various types like text, password, date, etc.
+> The tab for icons should show lucide-react icons.
+> The tab for other should be for other HTML types.
+> I would like a modal like this.
+
+> Here is a modal that fits the requirements. It would need to be hooked into the main application.
+
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/ui/dialog.jsx"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs.jsx"
+import { Button } from "@/ui/button.jsx"
+import { ScrollArea } from "@/ui/scroll-area.jsx"
+import * as LucideIcons from 'lucide-react';
+
+const containerTypes = [
+  { name: 'Flex Centered', classes: 'flex items-center justify-center' },
+  { name: 'Flex Row', classes: 'flex flex-row' },
+  { name: 'Flex Column', classes: 'flex flex-col' },
+  { name: 'Absolute', classes: 'absolute' },
+  { name: 'Fixed', classes: 'fixed' },
+  { name: 'Relative', classes: 'relative' },
+];
+
+const inputTypes = [
+  'text', 'password', 'email', 'number', 'date', 'time', 'datetime-local', 
+  'checkbox', 'radio', 'file', 'color', 'range', 'tel', 'url'
+];
+
+const otherTypes = [
+  'div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
+  'ul', 'ol', 'li', 'a', 'img', 'button', 'table', 'form'
+];
+
+const AddElementModal = ({ isOpen }) => {
+  const [selectedTab, setSelectedTab] = useState('container');
+
+  const handleAddElement = (type, classes = '') => {
+    // respond to the add here
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[800px]">
+        <DialogHeader>
+          <DialogTitle>Add Element</DialogTitle>
+        </DialogHeader>
+        <Tabs defaultValue="container" onValueChange={setSelectedTab}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="container">Container</TabsTrigger>
+            <TabsTrigger value="input">Input</TabsTrigger>
+            <TabsTrigger value="icon">Icon</TabsTrigger>
+            <TabsTrigger value="other">Other</TabsTrigger>
+          </TabsList>
+          <TabsContent value="container">
+            <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+              <div className="grid grid-cols-2 gap-4">
+                {containerTypes.map((container) => (
+                  <Button
+                    key={container.name}
+                    onClick={() => handleAddElement('div', container.classes)}
+                    variant="outline"
+                    className="justify-start"
+                  >
+                    {container.name}
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+          <TabsContent value="input">
+            <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+              <div className="grid grid-cols-2 gap-4">
+                {inputTypes.map((type) => (
+                  <Button
+                    key={type}
+                    onClick={() => handleAddElement('input', `type="${type}"`)}
+                    variant="outline"
+                    className="justify-start"
+                  >
+                    {type}
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+          <TabsContent value="icon">
+            <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+              <div className="grid grid-cols-4 gap-4">
+                {Object.keys(LucideIcons).map((iconName) => {
+                  const IconComponent = LucideIcons[iconName];
+                  return (
+                    <Button
+                      key={iconName}
+                      onClick={() => handleAddElement('icon', iconName)}
+                      variant="outline"
+                      className="flex flex-col items-center justify-center h-20"
+                    >
+                      <IconComponent className="w-6 h-6 mb-2" />
+                      <span className="text-xs">{iconName}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+          <TabsContent value="other">
+            <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+              <div className="grid grid-cols-2 gap-4">
+                {otherTypes.map((type) => (
+                  <Button
+                    key={type}
+                    onClick={() => handleAddElement(type)}
+                    variant="outline"
+                    className="justify-start"
+                  >
+                    {type}
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default AddElementModal;
+
+> The next step could be creating the accordions
+
+> Thank you.
+
+> First, here are some tailwind categories and subcategories that we can use for the UI selection of utility classes
+
+export const tailwindCategories = [
+    {
+        name: "Layout",
+        subcategories: [
+          {
+            name: "Container",
+            classes: ["container", "mx-auto"]
+          },
+          {
+            name: "Display",
+            classes: ["block", "inline-block", "inline", "flex", "inline-flex", "grid", "inline-grid", "hidden"]
+          },
+          {
+            name: "Flexbox",
+            classes: ["flex-row", "flex-col", "flex-wrap", "flex-nowrap", "justify-start", "justify-end", "justify-center", "justify-between", "items-start", "items-end", "items-center"]
+          },
+          {
+            name: "Grid",
+            classes: ["grid-cols-1", "grid-cols-2", "grid-cols-3", "grid-cols-4", "gap-1", "gap-2", "gap-4", "gap-8"]
+          }
+        ]
+      },
+      {
+        name: "Typography",
+        subcategories: [
+          {
+            name: "Font Family",
+            classes: ["font-sans", "font-serif", "font-mono"]
+          },
+          {
+            name: "Font Size",
+            classes: ["text-xs", "text-sm", "text-base", "text-lg", "text-xl", "text-2xl", "text-3xl"]
+          },
+          {
+            name: "Font Weight",
+            classes: ["font-light", "font-normal", "font-medium", "font-semibold", "font-bold"]
+          },
+          {
+            name: "Text Color",
+            classes: ["text-black", "text-white", "text-gray-500", "text-red-500", "text-blue-500", "text-green-500"]
+          }
+        ]
+      },
+      {
+        name: "Spacing",
+        subcategories: [
+          {
+            name: "Padding",
+            classes: ["p-1", "p-2", "p-4", "p-8", "px-2", "py-2", "pt-2", "pr-2", "pb-2", "pl-2"]
+          },
+          {
+            name: "Margin",
+            classes: ["m-1", "m-2", "m-4", "m-8", "mx-2", "my-2", "mt-2", "mr-2", "mb-2", "ml-2"]
+          }
+        ]
+      },
+      {
+        name: "Backgrounds",
+        subcategories: [
+          {
+            name: "Background Color",
+            classes: ["bg-white", "bg-black", "bg-gray-100", "bg-red-100", "bg-blue-100", "bg-green-100"]
+          },
+          {
+            name: "Background Size",
+            classes: ["bg-auto", "bg-cover", "bg-contain"]
+          }
+        ]
+      },
+      {
+        name: "Borders",
+        subcategories: [
+          {
+            name: "Border Width",
+            classes: ["border", "border-0", "border-2", "border-4", "border-8"]
+          },
+          {
+            name: "Border Color",
+            classes: ["border-black", "border-white", "border-gray-300", "border-red-300", "border-blue-300"]
+          },
+          {
+            name: "Border Radius",
+            classes: ["rounded-none", "rounded-sm", "rounded", "rounded-lg", "rounded-full"]
+          }
+        ]
+      }
+];
+
+> Next let's proceed with creating the accordion control that will display based on this data.
+
+<Accordion type="multiple">
+                {tailwindCategories.map((category, index) => (
+                  <AccordionItem value={`category-${index}`} key={index}>
+                    <AccordionTrigger>{category.name}</AccordionTrigger>
+                    <AccordionContent>
+                      {category.subcategories.map((subcategory, subIndex) => (
+                        <div key={subIndex} className="mb-2">
+                          <h4 className="font-semibold mb-1">{subcategory.name}</h4>
+                          <div className="flex flex-wrap">
+                            {subcategory.classes.map((cls, clsIndex) => (
+                              <div
+                                key={clsIndex}
+                                className="bg-blue-200 p-1 m-1 text-sm cursor-move rounded"
+                              >
+                                {cls}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+
+> Now we need to make the classes draggable.
+
+> So use this code instead:
+
+{subcategory.classes.map((cls, clsIndex) => (
+    <div
+    key={clsIndex}
+    draggable
+    onDragStart={(e) => handleDragStart(e, cls)}
+    className="bg-blue-200 p-1 m-1 text-sm cursor-move rounded"
+    >
+    {cls}
+    </div>
+))}
+
+> And add this code to handle the start of the drag:
+
+const handleDragStart = (e, className) => {
+    e.dataTransfer.setData('text/plain', `class:${className}`);
+  };
+
+> We prefix the data with 'class:' to allow for other types of drag and drop functionality in the future.
+
+> Here is the code to handle the drop action:
+
+const handleDrop = (e, elementPath) => {
+    e.preventDefault();
+    const data = e.dataTransfer.getData('text');
+    if (data.startsWith('class:')) {
+      const className = data.split(':')[1];
+      setContainers(prevContainers => {
+        const newContainers = JSON.parse(JSON.stringify(prevContainers));
+        let targetElement = newContainers;
+        for (const index of elementPath) {
+          targetElement = targetElement[index].children;
+        }
+        if (!targetElement.classes.some(cls => cls === className || (typeof cls === 'object' && cls.name === className))) {
+          targetElement.classes.push({ name: className, states: [], prefixes: [] });
+        }
+        return newContainers;
+      });
+    }
+    // .. allow for future DND functionality
+};
+
+> Then add this state to your main component
+
+const [containers, setContainers] = useState(initialElements);
+
+> Now let's configure the drop zone
+
+> Let's also create icons for the different types of elements that you can drop into:
+
+const ElementIcons = {
+  [ElementTypes.CONTAINER]: Box,
+  [ElementTypes.SPAN]: Type,
+  [ElementTypes.INPUT]: InputIcon,
+  [ElementTypes.BUTTON]: SquareAsterisk,
+  [ElementTypes.HEADING]: Heading1,
+  [ElementTypes.PARAGRAPH]: Heading2,
+  [ElementTypes.UNORDERED_LIST]: List,
+  [ElementTypes.ORDERED_LIST]: List,
+  [ElementTypes.LIST_ITEM]: Type,
+  [ElementTypes.IMAGE]: Image,
+  [ElementTypes.LINK]: Link,
+  [ElementTypes.SELECT]: ChevronDown,
+  [ElementTypes.CHECKBOX]: CheckSquare,
+  [ElementTypes.RADIO]: ToggleLeft,
+  [ElementTypes.SLIDER]: Sliders,
+};
+
+> Here is the code for the drop zone.
+
+const openAddElementModal = (path) => {
+    setCurrentPath(path);
+    setIsAddElementModalOpen(true);
+  };
+
+  // ...
+
+    const IconComponent = ElementIcons[element.type];
+    const isSelected = selectedElement && path.every((v, i) => v === selectedElement[i]);
+
+<div 
+        key={path.join('-')}
+        className={`border-2 border-dashed p-4 m-2 relative ${isSelected ? 'border-blue-500' : 'border-gray-300'}`}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => handleDrop(e, path)}
+      >
+        <div className="absolute top-0 left-0 bg-gray-200 px-2 py-1 text-xs flex items-center">
+          <IconComponent size={16} className="mr-1" />
+          {element.type}
+        </div>
+        <div className="absolute top-0 right-0">
+          <Button 
+            size="sm"
+            variant="outline" 
+            onClick={() => openAddElementModal(path)}
+          >
+            <Plus size={16} />
+          </Button>
+        </div>
+    </div>
