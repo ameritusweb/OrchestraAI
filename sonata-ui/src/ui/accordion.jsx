@@ -39,12 +39,12 @@ Accordion.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-export const AccordionItem = ({ value, children }) => {
+export const AccordionItem = ({ key, value, children }) => {
   const { openItems } = useContext(AccordionContext);
   const isOpen = openItems.has(value);
 
   return (
-    <div className="accordion-item">
+    <div key={key} className="accordion-item">
       <AccordionContext.Provider value={{ ...useContext(AccordionContext), itemValue: value, isOpen }}>
         {children}
       </AccordionContext.Provider>
@@ -53,6 +53,7 @@ export const AccordionItem = ({ value, children }) => {
 };
 
 AccordionItem.propTypes = {
+  key: PropTypes.string,
   value: PropTypes.string.isRequired,
   children: PropTypes.node.isRequired,
 };

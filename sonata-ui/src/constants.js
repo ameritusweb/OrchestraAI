@@ -115,3 +115,16 @@ export const breakpoints = [
   { name: 'Tablet', width: 768, icon: Tablet },
   { name: 'Desktop', width: 1280, icon: Monitor },
 ];
+
+export const TailwindPrefixes = [
+  { name: 'hover', description: 'Styles for hover state' },
+  { name: 'focus', description: 'Styles for focus state' },
+  { name: 'active', description: 'Styles for active state' },
+  { name: 'disabled', description: 'Styles for disabled state' },
+  { name: 'sm', description: 'Small breakpoint' },
+  { name: 'md', description: 'Medium breakpoint' },
+  { name: 'lg', description: 'Large breakpoint' },
+  { name: 'xl', description: 'Extra large breakpoint' },
+  { name: '2xl', description: '2X large breakpoint' },
+  { name: 'dark', description: 'Styles for dark mode' },
+];

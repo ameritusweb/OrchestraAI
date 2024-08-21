@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from "@/ui/button.jsx"
+import { Badge } from "@/ui/badge.jsx"
 import { Plus, Search, Box, Type, Input as InputIcon, X, SquareAsterisk, Heading1, Heading2, List, Image, Link, Moon, Sun, Smartphone, Tablet, Monitor, BookOpen, Tag, CheckSquare, ToggleLeft, ChevronDown, Sliders } from 'lucide-react';
 import AddElementModal from './AddElementModal.jsx';
 
@@ -48,7 +49,8 @@ const MainBuilder = ({
   toggleReactComponent,
   toggleStoryComponent,
   addElement,
-  removeClass
+  removeClass,
+  removePrefix,
 }) => {
   const [isAddElementModalOpen, setIsAddElementModalOpen] = useState(false);
   const [currentPath, setCurrentPath] = useState([]);
@@ -111,21 +113,43 @@ const MainBuilder = ({
         <div className="mt-8 mb-2 flex flex-wrap">
           {element.classes.map((cls, index) => (
             <div key={index} className="bg-blue-100 text-blue-800 text-xs font-semibold mr-2 mb-2 px-2.5 py-0.5 rounded flex items-center">
-              {typeof cls === 'object' ? cls.name : cls}
-              <button 
+              {typeof cls === 'object' ? (
+                <>
+                  <div className="flex flex-wrap items-center mr-1">
+                    {cls.prefixes.map((prefix, prefixIndex) => (
+                      <Badge key={prefixIndex} variant="outline" className="mr-1 mb-1">
+                        {prefix}
+                        <X 
+                          size={8} 
+                          className="ml-1 cursor-pointer" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removePrefix(path, cls.name, prefix);
+                          }}
+                        />
+                      </Badge>
+                    ))}
+                  </div>
+                  <span className="mr-1">{cls.name}</span>
+                </>
+              ) : cls}
+              <X 
+                size={12} 
+                className="ml-1 cursor-pointer" 
                 onClick={(e) => {
                   e.stopPropagation();
                   removeClass(path, typeof cls === 'object' ? cls.name : cls);
                 }}
-                className="ml-1 text-blue-500 hover:text-blue-700"
-              >
-                &times;
-              </button>
+              />
             </div>
           ))}
         </div>
         {element.content && <div className="text-sm">{element.content}</div>}
-        {element.children && element.children.map((child, index) => renderElement(child, [...path, index]))}
+        {(element.type === ElementTypes.CONTAINER || element.type === ElementTypes.UNORDERED_LIST || element.type === ElementTypes.ORDERED_LIST) && (
+          <div className="pl-4 border-l-2 border-gray-300">
+            {element.children.map((child, index) => renderElement(child, [...path, index]))}
+          </div>
+        )}
       </div>
     );
   };

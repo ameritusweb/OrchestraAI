@@ -1,0 +1,3405 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+/* ================================================================================ */
+import React, { useState } from 'react'
+import './App.css'
+import TailwindBuilder from './components/TailwindBuilder.jsx'
+
+function App() {
+  const [count, setCount] = useState(0)
+
+  return (
+    <>
+      <h1>Sonata UI</h1>
+      <div className="card">
+        <TailwindBuilder />
+      </div>
+    </>
+  )
+}
+
+export default App
+
+/* ================================================================================ */
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/ui/dialog.jsx"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs.jsx"
+import { Button } from "@/ui/button.jsx"
+import { ScrollArea } from "@/ui/scroll-area.jsx"
+import * as LucideIcons from 'lucide-react';
+
+const containerTypes = [
+  { name: 'Flex Centered', classes: 'flex items-center justify-center' },
+  { name: 'Flex Row', classes: 'flex flex-row' },
+  { name: 'Flex Column', classes: 'flex flex-col' },
+  { name: 'Absolute', classes: 'absolute' },
+  { name: 'Fixed', classes: 'fixed' },
+  { name: 'Relative', classes: 'relative' },
+];
+
+const inputTypes = [
+  'text', 'password', 'email', 'number', 'date', 'time', 'datetime-local', 
+  'checkbox', 'radio', 'file', 'color', 'range', 'tel', 'url'
+];
+
+const otherTypes = [
+  'div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
+  'ul', 'ol', 'li', 'a', 'img', 'button', 'table', 'form'
+];
+
+const AddElementModal = ({ isOpen, onClose, onAddElement }) => {
+  const [selectedTab, setSelectedTab] = useState('container');
+
+  const handleAddElement = (type, classes = '') => {
+    onAddElement(type, classes);
+    onClose();
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[800px]">
+        <DialogHeader>
+          <DialogTitle>Add Element</DialogTitle>
+        </DialogHeader>
+        <Tabs defaultValue="container" onValueChange={setSelectedTab}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="container">Container</TabsTrigger>
+            <TabsTrigger value="input">Input</TabsTrigger>
+            <TabsTrigger value="icon">Icon</TabsTrigger>
+            <TabsTrigger value="other">Other</TabsTrigger>
+          </TabsList>
+          <TabsContent value="container">
+            <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+              <div className="grid grid-cols-2 gap-4">
+                {containerTypes.map((container) => (
+                  <Button
+                    key={container.name}
+                    onClick={() => handleAddElement('div', container.classes)}
+                    variant="outline"
+                    className="justify-start"
+                  >
+                    {container.name}
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+          <TabsContent value="input">
+            <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+              <div className="grid grid-cols-2 gap-4">
+                {inputTypes.map((type) => (
+                  <Button
+                    key={type}
+                    onClick={() => handleAddElement('input', `type="${type}"`)}
+                    variant="outline"
+                    className="justify-start"
+                  >
+                    {type}
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+          <TabsContent value="icon">
+            <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+              <div className="grid grid-cols-4 gap-4">
+                {Object.keys(LucideIcons).map((iconName) => {
+                  const IconComponent = LucideIcons[iconName];
+                  return (
+                    <Button
+                      key={iconName}
+                      onClick={() => handleAddElement('icon', iconName)}
+                      variant="outline"
+                      className="flex flex-col items-center justify-center h-20"
+                    >
+                      <IconComponent className="w-6 h-6 mb-2" />
+                      <span className="text-xs">{iconName}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+          <TabsContent value="other">
+            <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+              <div className="grid grid-cols-2 gap-4">
+                {otherTypes.map((type) => (
+                  <Button
+                    key={type}
+                    onClick={() => handleAddElement(type)}
+                    variant="outline"
+                    className="justify-start"
+                  >
+                    {type}
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default AddElementModal;
+/* ================================================================================ */
+import React from 'react';
+import { Switch } from "@/ui/switch.jsx"
+import { Label } from "@/ui/label.jsx"
+
+const ClassesTab = ({ classToggles, toggleClass }) => {
+  return (
+    <div className="mb-6">
+      <h4 className="text-md font-semibold mb-2">Utility Classes</h4>
+      {Object.entries(classToggles).map(([classKey, isActive]) => {
+        const [elementId, className] = classKey.split('-');
+        return (
+          <div key={classKey} className="flex items-center justify-between mb-2">
+            <Label htmlFor={classKey} className="flex-grow">{className}</Label>
+            <Switch
+              id={classKey}
+              checked={isActive}
+              onCheckedChange={() => toggleClass(elementId, className)}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+export default ClassesTab;
+/* ================================================================================ */
+import React from 'react';
+import { Button } from "@/ui/button.jsx"
+import { Input } from "@/ui/input.jsx"
+
+const ComputedTab = ({ computedValues, setComputedValueDialogOpen, removeComputedValue }) => {
+  return (
+    <div className="mb-6">
+      <h4 className="text-md font-semibold mb-2">Computed Values</h4>
+      <Button onClick={() => setComputedValueDialogOpen(true)} className="mb-2">
+        Add Computed Value
+      </Button>
+      {Object.entries(computedValues).map(([id, { name, formula }]) => (
+        <div key={id} className="mb-2 p-2 border rounded">
+          <div className="font-semibold">{name}</div>
+          <div className="text-sm text-gray-600">{formula}</div>
+          <Button variant="destructive" size="sm" onClick={() => removeComputedValue(id)} className="mt-1">
+            Remove
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default ComputedTab;
+/* ================================================================================ */
+import React from 'react';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/ui/dialog.jsx';
+
+const ComputedValueDialog = ({ 
+    computedValueDialogOpen,
+    setComputedValueDialogOpen,
+    setCurrentComputedValue,
+    currentComputedValue
+  }) => {
+    return (
+<AlertDialog open={computedValueDialogOpen} onOpenChange={setComputedValueDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Add Computed Value</AlertDialogTitle>
+            <AlertDialogDescription>
+              Define a new computed value. Use $input.inputId to reference input values.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                value={currentComputedValue.name}
+                onChange={(e) => setCurrentComputedValue(prev => ({ ...prev, name: e.target.value }))}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="formula" className="text-right">
+                Formula
+              </Label>
+              <Input
+                id="formula"
+                value={currentComputedValue.formula}
+                onChange={(e) => setCurrentComputedValue(prev => ({ ...prev, formula: e.target.value }))}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={addComputedValue}>Add</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      );
+    };
+    
+    export default ComputedValueDialog;
+/* ================================================================================ */
+import React from 'react';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/ui/dialog.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/select.jsx';
+import { Button } from '@/ui/button.jsx';
+import { Label } from '@/ui/label.jsx';
+import { Input } from '@/ui/input.jsx';
+
+const EventDialog = ({ 
+  open, 
+  onOpenChange, 
+  currentEvent, 
+  setCurrentEvent, 
+  addEvent, 
+  setIsSelectingTarget 
+}) => {
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Add Event</AlertDialogTitle>
+          <AlertDialogDescription>
+            Define a new event for an element. Use the visual selector to choose the target element.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="elementId" className="text-right">
+              Element ID
+            </Label>
+            <Input
+              id="elementId"
+              value={currentEvent.elementId}
+              onChange={(e) => setCurrentEvent(prev => ({ ...prev, elementId: e.target.value }))}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="eventType" className="text-right">
+              Event Type
+            </Label>
+            <Select
+              value={currentEvent.type}
+              onValueChange={(value) => setCurrentEvent(prev => ({ ...prev, type: value }))}
+            >
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select event type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Click">Click</SelectItem>
+                <SelectItem value="Change">Change</SelectItem>
+                <SelectItem value="Focus">Focus</SelectItem>
+                <SelectItem value="Blur">Blur</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label className="text-right">Actions</Label>
+            <div className="col-span-3">
+              {currentEvent.actions && currentEvent.actions.map((action, index) => (
+                <div key={index} className="mb-2 p-2 border rounded">
+                  <Select
+                    value={action.type}
+                    onValueChange={(value) => {
+                      const newActions = [...currentEvent.actions];
+                      newActions[index] = { ...newActions[index], type: value };
+                      setCurrentEvent(prev => ({ ...prev, actions: newActions }));
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select action type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="set">Set</SelectItem>
+                      <SelectItem value="toggle">Toggle</SelectItem>
+                      <SelectItem value="increment">Increment</SelectItem>
+                      <SelectItem value="decrement">Decrement</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    value={action.value}
+                    onChange={(e) => {
+                      const newActions = [...currentEvent.actions];
+                      newActions[index] = { ...newActions[index], value: e.target.value };
+                      setCurrentEvent(prev => ({ ...prev, actions: newActions }));
+                    }}
+                    placeholder="Value"
+                    className="mt-2"
+                  />
+                  <Input
+                    value={action.condition}
+                    onChange={(e) => {
+                      const newActions = [...currentEvent.actions];
+                      newActions[index] = { ...newActions[index], condition: e.target.value };
+                      setCurrentEvent(prev => ({ ...prev, actions: newActions }));
+                    }}
+                    placeholder="Condition (optional)"
+                    className="mt-2"
+                  />
+                  <Button variant="destructive" size="sm" onClick={() => {
+                    const newActions = currentEvent.actions.filter((_, i) => i !== index);
+                    setCurrentEvent(prev => ({ ...prev, actions: newActions }));
+                  }} className="mt-2">
+                    Remove Action
+                  </Button>
+                </div>
+              ))}
+              <Button onClick={() => {
+                const newActions = [...(currentEvent.actions || []), { type: '', value: '', condition: '' }];
+                setCurrentEvent(prev => ({ ...prev, actions: newActions }));
+              }} className="mt-2">
+                Add Action
+              </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="target" className="text-right">
+              Target
+            </Label>
+            <div className="col-span-3 flex items-center">
+              <Input
+                id="target"
+                value={currentEvent.target}
+                onChange={(e) => setCurrentEvent(prev => ({ ...prev, target: e.target.value }))}
+                className="flex-grow"
+                placeholder="e.g., /inputs/input-id"
+              />
+              <Button onClick={() => setIsSelectingTarget(true)} className="ml-2">
+                Select
+              </Button>
+            </div>
+          </div>
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={addEvent}>Add Event</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
+
+export default EventDialog;
+/* ================================================================================ */
+import React from 'react';
+import { Button } from "@/ui/button.jsx"
+
+const EventsTab = ({ events, setEventDialogOpen, removeEvent }) => {
+  return (
+    <div className="mb-6">
+      <h4 className="text-md font-semibold mb-2">Events</h4>
+      <Button onClick={() => setEventDialogOpen(true)} className="mb-2">
+        Add Event
+      </Button>
+      {Object.entries(events).map(([elementId, elementEvents]) => (
+        <div key={elementId} className="mb-2 p-2 border rounded">
+          <div className="font-semibold">Element ID: {elementId}</div>
+          {elementEvents.map((event, index) => (
+            <div key={index} className="mt-1 p-1 bg-gray-100 rounded">
+              <div>Type: {event.type}</div>
+              <div>Actions:</div>
+              {event.actions.map((action, actionIndex) => (
+                <div key={actionIndex} className="ml-2">
+                  <div>Type: {action.type}</div>
+                  <div>Value: {action.value}</div>
+                  {action.condition && <div>Condition: {action.condition}</div>}
+                </div>
+              ))}
+              <div>Target: {event.target}</div>
+              <Button variant="destructive" size="sm" onClick={() => removeEvent(elementId, index)} className="mt-1">
+                Remove
+              </Button>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default EventsTab;
+/* ================================================================================ */
+import React from 'react';
+import { Label } from "@/ui/label.jsx"
+import { Input } from "@/ui/input.jsx"
+import { Checkbox } from "@/ui/checkbox.jsx"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select.jsx"
+import { Slider } from "@/ui/slider.jsx"
+
+const InputsTab = ({ previewInputs, handleInputChange }) => {
+  const renderInput = (element) => {
+    switch (element.type) {
+      case 'input':
+        return (
+          <div key={element.id} className="mb-4">
+            <Label htmlFor={element.id}>{element.content || 'Input'}</Label>
+            <Input
+              id={element.id}
+              value={previewInputs[element.id] || ''}
+              onChange={(e) => handleInputChange(element.id, e.target.value)}
+              placeholder={element.content || 'Input'}
+            />
+          </div>
+        );
+      case 'select':
+        return (
+          <div key={element.id} className="mb-4">
+            <Label htmlFor={element.id}>{element.content || 'Select'}</Label>
+            <Select
+              value={previewInputs[element.id] || ''}
+              onValueChange={(value) => handleInputChange(element.id, value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select an option" />
+              </SelectTrigger>
+              <SelectContent>
+                {(element.options || []).map((option, index) => (
+                  <SelectItem key={index} value={option}>{option}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        );
+      case 'checkbox':
+        return (
+          <div key={element.id} className="mb-4 flex items-center">
+            <Checkbox
+              id={element.id}
+              checked={previewInputs[element.id] || false}
+              onCheckedChange={(checked) => handleInputChange(element.id, checked)}
+            />
+            <Label htmlFor={element.id} className="ml-2">{element.content || 'Checkbox'}</Label>
+          </div>
+        );
+      case 'slider':
+        return (
+          <div key={element.id} className="mb-4">
+            <Label htmlFor={element.id}>{element.content || 'Slider'}</Label>
+            <Slider
+              id={element.id}
+              min={element.min || 0}
+              max={element.max || 100}
+              step={element.step || 1}
+              value={[previewInputs[element.id] || element.min || 0]}
+              onValueChange={([value]) => handleInputChange(element.id, value)}
+            />
+            <p className="text-sm mt-1">Value: {previewInputs[element.id] || element.min || 0}</p>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="mb-6">
+      <h4 className="text-md font-semibold mb-2">Inputs</h4>
+      {Object.entries(previewInputs).map(([id, value]) => renderInput({ id, ...value }))}
+    </div>
+  );
+};
+
+export default InputsTab;
+/* ================================================================================ */
+import React, { useState } from 'react';
+import { Button } from "@/ui/button.jsx"
+import { Badge } from "@/ui/badge.jsx"
+import { Plus, Search, Box, Type, Input as InputIcon, X, SquareAsterisk, Heading1, Heading2, List, Image, Link, Moon, Sun, Smartphone, Tablet, Monitor, BookOpen, Tag, CheckSquare, ToggleLeft, ChevronDown, Sliders } from 'lucide-react';
+import AddElementModal from './AddElementModal.jsx';
+
+const ElementTypes = {
+  CONTAINER: 'container',
+  SPAN: 'span',
+  INPUT: 'input',
+  BUTTON: 'button',
+  HEADING: 'heading',
+  PARAGRAPH: 'paragraph',
+  UNORDERED_LIST: 'ul',
+  ORDERED_LIST: 'ol',
+  LIST_ITEM: 'li',
+  IMAGE: 'img',
+  LINK: 'a',
+  SELECT: 'select',
+  CHECKBOX: 'checkbox',
+  RADIO: 'radio',
+  SLIDER: 'slider',
+};
+  
+const ElementIcons = {
+  [ElementTypes.CONTAINER]: Box,
+  [ElementTypes.SPAN]: Type,
+  [ElementTypes.INPUT]: InputIcon,
+  [ElementTypes.BUTTON]: SquareAsterisk,
+  [ElementTypes.HEADING]: Heading1,
+  [ElementTypes.PARAGRAPH]: Heading2,
+  [ElementTypes.UNORDERED_LIST]: List,
+  [ElementTypes.ORDERED_LIST]: List,
+  [ElementTypes.LIST_ITEM]: Type,
+  [ElementTypes.IMAGE]: Image,
+  [ElementTypes.LINK]: Link,
+  [ElementTypes.SELECT]: ChevronDown,
+  [ElementTypes.CHECKBOX]: CheckSquare,
+  [ElementTypes.RADIO]: ToggleLeft,
+  [ElementTypes.SLIDER]: Sliders,
+};
+
+const MainBuilder = ({ 
+  containers, 
+  setContainers,
+  selectedElement,
+  setSelectedElement,
+  handleDrop,
+  toggleReactComponent,
+  toggleStoryComponent,
+  addElement,
+  removeClass,
+  removePrefix,
+}) => {
+  const [isAddElementModalOpen, setIsAddElementModalOpen] = useState(false);
+  const [currentPath, setCurrentPath] = useState([]);
+
+  const openAddElementModal = (path) => {
+    setCurrentPath(path);
+    setIsAddElementModalOpen(true);
+  };
+
+  const handleAddElement = (type, classes = '') => {
+    addElement(currentPath, type, classes);
+  };
+
+  const renderElement = (element, path = []) => {
+    const IconComponent = ElementIcons[element.type];
+    const isSelected = selectedElement && path.every((v, i) => v === selectedElement[i]);
+
+    return (
+      <div 
+        key={path.join('-')}
+        className={`border-2 border-dashed p-4 m-2 relative ${isSelected ? 'border-blue-500' : 'border-gray-300'}`}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => handleDrop(e, path)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setSelectedElement(path);
+        }}
+      >
+        <div className="absolute top-0 left-0 bg-gray-200 px-2 py-1 text-xs flex items-center">
+          <IconComponent size={16} className="mr-1" />
+          {element.type}
+          {element.type === ElementTypes.CONTAINER && (
+            <>
+              <input
+                type="checkbox"
+                checked={element.isReactComponent}
+                onChange={() => toggleReactComponent(path)}
+                className="ml-2"
+              />
+              <label className="ml-1 mr-2">React</label>
+              <input
+                type="checkbox"
+                checked={element.isStoryComponent}
+                onChange={() => toggleStoryComponent(path)}
+                className="ml-2"
+              />
+              <label className="ml-1">Story</label>
+            </>
+          )}
+        </div>
+        <div className="absolute top-0 right-0">
+          <Button 
+            size="sm"
+            variant="outline" 
+            onClick={() => openAddElementModal(path)}
+          >
+            <Plus size={16} />
+          </Button>
+        </div>
+        <div className="mt-8 mb-2 flex flex-wrap">
+          {element.classes.map((cls, index) => (
+            <div key={index} className="bg-blue-100 text-blue-800 text-xs font-semibold mr-2 mb-2 px-2.5 py-0.5 rounded flex items-center">
+              {typeof cls === 'object' ? (
+                <>
+                  <div className="flex flex-wrap items-center mr-1">
+                    {cls.prefixes.map((prefix, prefixIndex) => (
+                      <Badge key={prefixIndex} variant="outline" className="mr-1 mb-1">
+                        {prefix}
+                        <X 
+                          size={8} 
+                          className="ml-1 cursor-pointer" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removePrefix(path, cls.name, prefix);
+                          }}
+                        />
+                      </Badge>
+                    ))}
+                  </div>
+                  <span className="mr-1">{cls.name}</span>
+                </>
+              ) : cls}
+              <X 
+                size={12} 
+                className="ml-1 cursor-pointer" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeClass(path, typeof cls === 'object' ? cls.name : cls);
+                }}
+              />
+            </div>
+          ))}
+        </div>
+        {element.content && <div className="text-sm">{element.content}</div>}
+        {(element.type === ElementTypes.CONTAINER || element.type === ElementTypes.UNORDERED_LIST || element.type === ElementTypes.ORDERED_LIST) && (
+          <div className="pl-4 border-l-2 border-gray-300">
+            {element.children.map((child, index) => renderElement(child, [...path, index]))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="h-screen p-4 overflow-y-auto">
+      <div className="border-2 border-gray-300 p-4 min-h-[300px]">
+        {containers.map((container, index) => renderElement(container, [index]))}
+      </div>
+      <AddElementModal 
+        isOpen={isAddElementModalOpen}
+        onClose={() => setIsAddElementModalOpen(false)}
+        onAddElement={handleAddElement}
+      />
+    </div>
+  );
+};
+
+export default MainBuilder;
+/* ================================================================================ */
+import React from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs.jsx"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select.jsx"
+import { Switch } from "@/ui/switch.jsx"
+import { Moon, Sun } from 'lucide-react';
+import ClassesTab from './ClassesTab.jsx';
+import ComputedTab from './ComputedTab.jsx';
+import EventsTab from './EventsTab.jsx';
+import InputsTab from './InputsTab.jsx';
+import StorybookTab from './StorybookTab.jsx';
+import ReactExportTab from './ReactExportTab.jsx';
+
+const PreviewPane = ({
+  previewBreakpoint,
+  setPreviewBreakpoint,
+  isDarkMode,
+  setIsDarkMode,
+  previewHtml,
+  previewInputs,
+  handleInputChange,
+  classToggles,
+  toggleClass,
+  computedValues,
+  setComputedValueDialogOpen,
+  removeComputedValue,
+  events,
+  setEventDialogOpen,
+  removeEvent,
+  breakpoints,
+  containers,
+  componentDocs,
+}) => {
+  return (
+    <div className="h-screen p-4 overflow-y-auto">
+      <h3 className="text-lg font-semibold mb-4">Preview</h3>
+      <div className="mb-4 flex items-center justify-between">
+        <Select
+          value={previewBreakpoint.name}
+          onValueChange={(value) => setPreviewBreakpoint(breakpoints.find(b => b.name === value))}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select breakpoint" />
+          </SelectTrigger>
+          <SelectContent>
+            {breakpoints.map((breakpoint) => (
+              <SelectItem key={breakpoint.name} value={breakpoint.name}>
+                <div className="flex items-center">
+                  <breakpoint.icon className="mr-2 h-4 w-4" />
+                  {breakpoint.name}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex items-center">
+          <Sun className="h-4 w-4 mr-2" />
+          <Switch
+            checked={isDarkMode}
+            onCheckedChange={setIsDarkMode}
+          />
+          <Moon className="h-4 w-4 ml-2" />
+        </div>
+      </div>
+      <Tabs defaultValue="inputs">
+        <TabsList>
+          <TabsTrigger value="inputs">Inputs</TabsTrigger>
+          <TabsTrigger value="classes">Classes</TabsTrigger>
+          <TabsTrigger value="computed">Computed</TabsTrigger>
+          <TabsTrigger value="events">Events</TabsTrigger>
+          <TabsTrigger value="storybook">Storybook</TabsTrigger>
+        </TabsList>
+        <TabsContent value="inputs">
+          <InputsTab previewInputs={previewInputs} handleInputChange={handleInputChange} />
+        </TabsContent>
+        <TabsContent value="classes">
+          <ClassesTab classToggles={classToggles} toggleClass={toggleClass} />
+        </TabsContent>
+        <TabsContent value="computed">
+          <ComputedTab computedValues={computedValues} setComputedValueDialogOpen={setComputedValueDialogOpen} removeComputedValue={removeComputedValue} />
+        </TabsContent>
+        <TabsContent value="events">
+          <EventsTab events={events} setEventDialogOpen={setEventDialogOpen} removeEvent={removeEvent} />
+        </TabsContent>
+        <TabsContent value="storybook">
+          <StorybookTab containers={containers} computedValues={computedValues} events={events} componentDocs={componentDocs} />
+        </TabsContent>
+        <TabsContent value="react-export">
+          <ReactExportTab containers={containers} computedValues={computedValues} events={events} previewInputs={previewInputs} />
+        </TabsContent>
+      </Tabs>
+      <div 
+        className={`border rounded p-4 ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white'}`}
+        style={{ width: `${previewBreakpoint.width}px`, maxWidth: '100%', margin: '0 auto' }}
+      >
+        <h4 className="text-md font-semibold mb-2">Live Preview</h4>
+        <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+      </div>
+    </div>
+  );
+};
+
+export default PreviewPane;
+/* ================================================================================ */
+import React, { useState } from 'react';
+import { Button } from "@/ui/button.jsx"
+import { Textarea } from "@/ui/textarea.jsx"
+import { Label } from "@/ui/label.jsx"
+
+const ReactExportTab = ({ containers, computedValues, events, previewInputs }) => {
+  const [generatedCode, setGeneratedCode] = useState('');
+
+  const generateReactComponent = () => {
+    let imports = `import React, { useState, useEffect } from 'react';\n`;
+
+    let stateDeclarations = `
+  const [state, setState] = useState({
+    inputs: {
+      ${Object.keys(previewInputs).map(id => `'${id}': ''`).join(',\n      ')}
+    },
+    computed: {
+      ${Object.keys(computedValues).map(id => `'${id}': ''`).join(',\n      ')}
+    }
+  });
+`;
+
+    let useEffectHook = `
+  useEffect(() => {
+    setState(prevState => ({
+      ...prevState,
+      computed: {
+        ${Object.entries(computedValues).map(([id, { name, formula }]) => `
+        '${id}': (() => {
+          try {
+            ${formula.replace(/\$input\.([\w-]+)/g, (match, inputId) => `const ${inputId} = prevState.inputs['${inputId}'] || 0;`)}
+            return ${formula.replace(/\$input\.([\w-]+)/g, inputId => inputId)};
+          } catch (error) {
+            console.error('Error computing ${name}:', error);
+            return 'Error';
+          }
+        })()
+        `).join(',\n        ')}
+      }
+    }));
+  }, [${Object.keys(previewInputs).map(id => `state.inputs['${id}']`).join(', ')}]);
+`;
+
+    let eventHandler = `
+  const handleEvent = (elementId, eventType) => {
+    ${Object.entries(events).map(([elementId, elementEvents]) => `
+    if (elementId === '${elementId}') {
+      ${elementEvents.map(event => `
+      if (eventType === '${event.type}') {
+        ${event.actions.map(action => `
+        {
+          ${action.condition ? `if (${action.condition}) {` : ''}
+          const targetPath = '${event.target}'.split('/').filter(Boolean);
+          setState(prevState => {
+            const newState = JSON.parse(JSON.stringify(prevState));
+            let target = newState;
+            for (let i = 0; i < targetPath.length - 1; i++) {
+              if (!target[targetPath[i]]) {
+                target[targetPath[i]] = {};
+              }
+              target = target[targetPath[i]];
+            }
+            const lastKey = targetPath[targetPath.length - 1];
+            
+            switch ('${action.type}') {
+              case 'set':
+                target[lastKey] = ${JSON.stringify(action.value)};
+                break;
+              case 'toggle':
+                target[lastKey] = !target[lastKey];
+                break;
+              case 'increment':
+                target[lastKey] = (parseFloat(target[lastKey]) || 0) + ${action.value};
+                break;
+              case 'decrement':
+                target[lastKey] = (parseFloat(target[lastKey]) || 0) - ${action.value};
+                break;
+              case 'custom':
+                // Execute custom function
+                const customFunction = ${action.value};
+                target[lastKey] = customFunction(newState, target[lastKey]);
+                break;
+            }
+            
+            return newState;
+          });
+          ${action.condition ? '}' : ''}
+        }`).join('\n        ')}
+      }`).join('\n      ')}
+    }`).join('\n    ')}
+  };
+`;
+
+    const generateElementJsx = (element) => {
+      const classNames = element.classes.map(cls => typeof cls === 'object' ? cls.name : cls).join(' ');
+      const elementEvents = events[element.id] || [];
+      const eventProps = elementEvents.reduce((props, event) => {
+        props[`on${event.type}`] = `() => handleEvent('${element.id}', '${event.type}')`;
+        return props;
+      }, {});
+      
+      switch (element.type) {
+        case 'container':
+          return `
+  <div
+    className="${classNames}"
+    ${Object.entries(eventProps).map(([prop, value]) => `${prop}={${value}}`).join(' ')}
+  >
+    ${element.children.map(generateElementJsx).join('\n    ')}
+  </div>
+`;
+        case 'input':
+          return `
+  <input
+    id="${element.id}"
+    className="${classNames}"
+    value={state.inputs['${element.id}']}
+    onChange={(e) => setState(prev => ({ ...prev, inputs: { ...prev.inputs, '${element.id}': e.target.value } }))}
+    placeholder="${element.content || 'Input'}"
+    ${Object.entries(eventProps).map(([prop, value]) => `${prop}={${value}}`).join(' ')}
+  />
+`;
+        // Add cases for other element types as needed
+        default:
+          return '';
+      }
+    };
+
+    let jsx = `
+  return (
+    <div>
+      ${containers.map(generateElementJsx).join('\n      ')}
+      {/* Computed Values Display */}
+      <div>
+        ${Object.entries(computedValues).map(([id, { name }]) => `
+        <div>
+          <strong>${name}:</strong> {state.computed['${id}']}
+        </div>
+        `).join('\n        ')}
+      </div>
+    </div>
+  );
+`;
+
+    const fullComponent = `
+${imports}
+
+const YourComponent = () => {
+${stateDeclarations}
+${useEffectHook}
+${eventHandler}
+${jsx}
+}
+
+export default YourComponent;
+`;
+
+    setGeneratedCode(fullComponent);
+  };
+
+  return (
+    <div className="mb-6">
+      <h4 className="text-md font-semibold mb-2">React Export</h4>
+      <Button onClick={generateReactComponent} className="mb-2">
+        Generate React Component
+      </Button>
+      {generatedCode && (
+        <div>
+          <Label htmlFor="generated-code">Generated React Component:</Label>
+          <Textarea
+            id="generated-code"
+            value={generatedCode}
+            readOnly
+            className="mt-2 h-[400px]"
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ReactExportTab;
+/* ================================================================================ */
+import React from 'react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/ui/accordion.jsx';
+import { Button } from "@/ui/button.jsx"
+import { Input } from "@/ui/input.jsx"
+import { Label } from "@/ui/label.jsx"
+import { Plus, Search } from 'lucide-react';
+import { ElementTypes, tailwindCategories, TailwindPrefixes } from '../constants.js';
+
+const Sidebar = ({ 
+  searchTerm, 
+  setSearchTerm, 
+  handleDragStart, 
+  addContainer,
+  addClassGroup,
+  removeClassGroup,
+  setNewGroupName,
+  setNewGroupClasses,
+  classGroups,
+  newGroupName,
+  newGroupClasses,
+  removeStorybookState,
+  storybookStates,
+  addStorybookState,
+  newStateName,
+  setNewStateName,
+  prefixSearch,
+  setPrefixSearch,
+}) => {
+
+  const filteredCategories = tailwindCategories.map(category => ({
+    ...category,
+    subcategories: category.subcategories.map(subcategory => ({
+      ...subcategory,
+      classes: subcategory.classes.filter(cls => 
+        cls.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    })).filter(subcategory => subcategory.classes.length > 0)
+  })).filter(category => category.subcategories.length > 0);
+
+  return (
+    <div className="h-screen bg-gray-100 p-4 overflow-y-auto">
+      <Button onClick={addContainer} className="mb-4">
+        Add Container
+      </Button>
+      <div className="mb-4 relative">
+        <Input
+          placeholder="Search classes..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pr-8"
+        />
+        <Search className="absolute right-2 top-2 text-gray-400" size={20} />
+      </div>
+      <Tabs defaultValue="classes">
+            <TabsList>
+              <TabsTrigger value="classes">Classes</TabsTrigger>
+              <TabsTrigger value="groups">Groups</TabsTrigger>
+            </TabsList>
+            <TabsContent value="classes">
+              <Accordion type="multiple">
+                {filteredCategories.map((category, index) => (
+                  <AccordionItem value={`category-${index}`} key={index}>
+                    <AccordionTrigger>{category.name}</AccordionTrigger>
+                    <AccordionContent>
+                      {category.subcategories.map((subcategory, subIndex) => (
+                        <div key={subIndex} className="mb-2">
+                          <h4 className="font-semibold mb-1">{subcategory.name}</h4>
+                          <div className="flex flex-wrap">
+                            {subcategory.classes.map((cls, clsIndex) => (
+                              <div
+                                key={clsIndex}
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, cls)}
+                                className="bg-blue-200 p-1 m-1 text-sm cursor-move rounded"
+                              >
+                                {cls}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </TabsContent>
+            <TabsContent value="groups">
+              <div className="mb-4">
+                <Input
+                  placeholder="Group Name"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  className="mb-2"
+                />
+                <Input
+                  placeholder="Classes (space-separated)"
+                  value={newGroupClasses}
+                  onChange={(e) => setNewGroupClasses(e.target.value)}
+                  className="mb-2"
+                />
+                <Button onClick={addClassGroup}>Add Group</Button>
+              </div>
+              {classGroups.map((group, index) => (
+                <div
+                  key={index}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, `group-${index}`)}
+                  className="bg-blue-200 p-2 mb-2 rounded"
+                >
+                  <h4 className="font-semibold">{group.name}</h4>
+                  <p className="text-sm">{group.classes.join(' ')}</p>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => removeClassGroup(index)}
+                    className="mt-2"
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+            </TabsContent>
+            <TabsContent value="states">
+              <div className="mb-4">
+                <Input
+                  placeholder="New State Name"
+                  value={newStateName}
+                  onChange={(e) => setNewStateName(e.target.value)}
+                  className="mb-2"
+                />
+                <Button onClick={addStorybookState}>Add State</Button>
+              </div>
+              {storybookStates.map((state, index) => (
+                <div
+                  key={index}
+                  draggable
+                  onDragStart={(e) => e.dataTransfer.setData('text', `state:${state}`)}
+                  className="bg-green-200 p-2 mb-2 rounded flex justify-between items-center"
+                >
+                  <span>{state}</span>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => removeStorybookState(state)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+            </TabsContent>
+            <TabsContent value="prefixes">
+              <div className="mb-4">
+                <Input
+                  placeholder="Search prefixes..."
+                  value={prefixSearch}
+                  onChange={(e) => setPrefixSearch(e.target.value)}
+                  className="mb-2"
+                />
+              </div>
+              {TailwindPrefixes.filter(prefix => 
+                prefix.name.toLowerCase().includes(prefixSearch.toLowerCase()) ||
+                prefix.description.toLowerCase().includes(prefixSearch.toLowerCase())
+              ).map((prefix, index) => (
+                <div
+                  key={index}
+                  draggable
+                  onDragStart={(e) => e.dataTransfer.setData('text', `prefix:${prefix.name}`)}
+                  className="bg-purple-200 p-2 mb-2 rounded flex justify-between items-center"
+                >
+                  <span className="font-semibold">{prefix.name}</span>
+                  <span className="text-sm text-gray-600">{prefix.description}</span>
+                </div>
+              ))}
+            </TabsContent>
+          </Tabs>
+    </div>
+  );
+};
+
+export default Sidebar;
+/* ================================================================================ */
+import React from 'react';
+import { Button } from "@/ui/button.jsx"
+import { generateStorybook, exportStorybookConfig } from '../modules/storybookGenerator.js';
+
+const StorybookTab = ({ containers, computedValues, events, componentDocs }) => {
+  const handleGenerateStorybook = () => {
+    const stories = generateStorybook(containers, computedValues, events, componentDocs);
+    console.log('Generated Storybook stories:', stories);
+    // Here you could implement logic to save these stories to files
+  };
+
+  const handleExportStorybookConfig = () => {
+    const config = exportStorybookConfig();
+    console.log('Storybook config:', config);
+    // Here you could implement logic to save this config to a file
+  };
+
+  return (
+    <div className="mb-6">
+      <h4 className="text-md font-semibold mb-2">Storybook</h4>
+      <Button onClick={handleGenerateStorybook} className="mb-2 mr-2">
+        Generate Storybook
+      </Button>
+      <Button onClick={handleExportStorybookConfig} className="mb-2">
+        Export Storybook Config
+      </Button>
+    </div>
+  );
+};
+
+export default StorybookTab;
+/* ================================================================================ */
+import React, { useState, useEffect } from 'react';
+import Sidebar from './Sidebar.jsx';
+import PreviewPane from './PreviewPane.jsx';
+import EventDialog from './EventDialog.jsx';
+import { ElementTypes, initialElements } from '../constants.js';
+import { ResizablePanel, ResizablePanelGroup } from "@/ui/resizable.jsx";
+import { breakpoints } from '../constants.js';
+import MainBuilder from './MainBuilder.jsx';
+import TargetSelectorDialog from './TargetSelectorDialog.jsx';
+import { TreeItem } from '@/ui/tree.jsx';
+import ComputedValueDialog from './ComputedValueDialog.jsx';
+import { generateFullClassName } from '../utils.js';
+
+const TailwindBuilder = () => {
+  const [containers, setContainers] = useState(initialElements);
+  const [selectedElement, setSelectedElement] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [events, setEvents] = useState({});
+  const [isSelectingTarget, setIsSelectingTarget] = useState(false);
+  const [classToggles, setClassToggles] = useState({});
+  const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [currentEvent, setCurrentEvent] = useState({ elementId: '', type: '', actions: [], target: '' });
+  const [previewInputs, setPreviewInputs] = useState({});
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [previewBreakpoint, setPreviewBreakpoint] = useState(breakpoints[2]);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [computedValues, setComputedValues] = useState({});
+  const [componentDocs, setComponentDocs] = useState({});
+  const [computedValueDialogOpen, setComputedValueDialogOpen] = useState(false);
+  const [currentComputedValue, setCurrentComputedValue] = useState({ id: '', name: '', formula: '' });
+  const [classGroups, setClassGroups] = useState([]);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupClasses, setNewGroupClasses] = useState('');
+  const [prefixSearch, setPrefixSearch] = useState('');
+  const [storybookStates, setStorybookStates] = useState([]);
+  const [newStateName, setNewStateName] = useState('');
+
+  const removePrefix = (elementPath, className, prefixToRemove) => {
+    setContainers(prevContainers => {
+      const newContainers = JSON.parse(JSON.stringify(prevContainers));
+      let targetElement = newContainers;
+      for (const index of elementPath) {
+        targetElement = targetElement[index].children;
+      }
+      targetElement.classes = targetElement.classes.map(cls => {
+        if (typeof cls === 'object' && cls.name === className) {
+          return {
+            ...cls,
+            prefixes: cls.prefixes.filter(prefix => prefix !== prefixToRemove)
+          };
+        }
+        return cls;
+      });
+      return newContainers;
+    });
+  };
+
+  const addClassGroup = () => {
+    if (newGroupName && newGroupClasses) {
+      setClassGroups([...classGroups, {
+        name: newGroupName,
+        classes: newGroupClasses.split(' ').filter(Boolean),
+      }]);
+      setNewGroupName('');
+      setNewGroupClasses('');
+    }
+  };
+
+  const removeClassGroup = (index) => {
+    setClassGroups(classGroups.filter((_, i) => i !== index));
+  };
+
+  const removeComputedValue = (id) => {
+    setComputedValues(prev => {
+      const newComputedValues = { ...prev };
+      delete newComputedValues[id];
+      return newComputedValues;
+    });
+  };
+  
+  const toggleClass = (id, className) => {
+    setClassToggles(prev => ({
+      ...prev,
+      [id]: prev[id] === className ? '' : className,
+    }));
+  };
+
+  const handleInputChange = (inputId, value) => {
+    setPreviewInputs(prev => ({
+      ...prev,
+      [inputId]: value
+    }));
+  };
+
+  const addContainer = () => {
+    setContainers(prev => [...prev, { type: 'container', classes: [], children: [] }]);
+  };
+
+  const getDefaultContent = (type) => {
+    switch (type) {
+      case ElementTypes.BUTTON:
+        return 'Button';
+      case ElementTypes.HEADING:
+        return 'Heading';
+      case ElementTypes.PARAGRAPH:
+        return 'Paragraph text';
+      case ElementTypes.SPAN:
+        return 'Span text';
+      case ElementTypes.LIST_ITEM:
+        return 'List item';
+      case ElementTypes.LINK:
+        return 'Link text';
+      case ElementTypes.IMAGE:
+        return { src: '/api/placeholder/200/200', alt: 'Placeholder image' };
+      case ElementTypes.SELECT:
+        return ['Option 1', 'Option 2', 'Option 3'];
+      case ElementTypes.CHECKBOX:
+      case ElementTypes.RADIO:
+        return ['Option 1', 'Option 2'];
+      case ElementTypes.SLIDER:
+        return { min: 0, max: 100, step: 1 };
+      default:
+        return '';
+    }
+  };
+
+  const addElement = (parentPath, type) => {
+    const newElement = {
+      type,
+      id: `${type}-${Math.random().toString(36).substr(2, 9)}`,
+      classes: [],
+      children: [],
+      content: getDefaultContent(type),
+    };
+    setContainers(prevContainers => {
+      const newContainers = [...prevContainers];
+      let targetContainer = newContainers;
+      for (let i = 0; i < parentPath.length; i++) {
+        targetContainer = targetContainer[parentPath[i]].children;
+      }
+      targetContainer.push(newElement);
+      return newContainers;
+    });
+  };
+
+  const removeClass = (path, classToRemove) => {
+    setContainers(prevContainers => {
+      const newContainers = JSON.parse(JSON.stringify(prevContainers));
+      let targetElement = newContainers;
+      for (const index of path) {
+        targetElement = targetElement[index].children;
+      }
+      targetElement.classes = targetElement.classes.filter(cls => 
+        cls !== classToRemove && (typeof cls !== 'object' || cls.name !== classToRemove)
+      );
+      return newContainers;
+    });
+  };
+
+  const generatePreviewHtml = () => {
+    let html = '';
+    const generateElementHtml = (element) => {
+      const activeClasses = element.classes
+        .filter((cls) => {
+          const classKey = `${element.id}-${typeof cls === 'object' ? cls.name : cls}`;
+          return classToggles[classKey] !== false;
+        })
+        .map(generateFullClassName)
+        .join(' ');
+
+        const elementEvents = events[element.id] || [];
+      const eventAttributes = elementEvents.map(event => 
+        `on${event.type}="handleEvent('${element.id}', '${event.type}')"`
+      ).join(' ');
+
+      switch (element.type) {
+        case ElementTypes.CONTAINER:
+          return `<div class="${activeClasses}" ${eventAttributes}>${element.children.map(generateElementHtml).join('')}</div>`;
+        case ElementTypes.SPAN:
+          return `<span class="${activeClasses}" ${eventAttributes}>${element.content}</span>`;
+        case ElementTypes.INPUT:
+          const inputId = `input-${element.id}`;
+          const inputValue = previewInputs[inputId] || '';
+          return `<input id="${inputId}" class="${activeClasses}" type="text" value="${inputValue}" placeholder="${element.content || 'Input'}" ${eventAttributes} />`;
+        case ElementTypes.BUTTON:
+          return `<button class="${activeClasses}">${element.content || 'Button'} ${eventAttributes}</button>`;
+        case ElementTypes.HEADING:
+          return `<h2 class="${activeClasses}" ${eventAttributes}>${element.content || 'Heading'}</h2>`;
+        case ElementTypes.PARAGRAPH:
+          return `<p class="${activeClasses}" ${eventAttributes}>${element.content || 'Paragraph text'}</p>`;
+        case ElementTypes.SELECT:
+          const selectId = `select-${element.id}`;
+          const selectValue = previewInputs[selectId] || '';
+          return `
+            <select id="${selectId}" class="${activeClasses}" ${eventAttributes}>
+              ${(element.options || []).map((option) =>
+                `<option value="${option}" ${selectValue === option ? 'selected' : ''}>${option}</option>`
+              ).join('')}
+            </select>
+          `;
+        case ElementTypes.CHECKBOX:
+          const checkboxId = `checkbox-${element.id}`;
+          const isChecked = previewInputs[checkboxId] || false;
+          return `
+            <div class="flex items-center" ${eventAttributes}>
+              <input type="checkbox" id="${checkboxId}" class="${activeClasses}" ${isChecked ? 'checked' : ''} />
+              <label for="${checkboxId}" class="ml-2">${element.content || 'Checkbox'}</label>
+            </div>
+          `;
+        case ElementTypes.RADIO:
+          const radioName = `radio-${element.id}`;
+          return `
+            <div class="${activeClasses}">
+              ${(element.options || []).map((option, index) => {
+                const radioId = `${radioName}-${index}`;
+                const isChecked = previewInputs[radioName] === option;
+                return `
+                  <div class="flex items-center mb-2" ${eventAttributes}>
+                    <input type="radio" id="${radioId}" name="${radioName}" value="${option}" class="${activeClasses}" ${isChecked ? 'checked' : ''} />
+                    <label for="${radioId}" class="ml-2">${option}</label>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
+        case ElementTypes.SLIDER:
+          const sliderId = `slider-${element.id}`;
+          const sliderValue = previewInputs[sliderId] || element.min || 0;
+          return `
+            <div class="${activeClasses}" ${eventAttributes}>
+              <input type="range" id="${sliderId}" min="${element.min || 0}" max="${element.max || 100}" value="${sliderValue}" class="w-full" />
+              <p>Value: ${sliderValue}</p>
+            </div>
+          `;
+        default:
+          return '';
+      }
+    };
+
+    html = containers.map(generateElementHtml).join('');
+    setPreviewHtml(html);
+  };
+
+  useEffect(() => {
+    generatePreviewHtml();
+  }, [containers, previewInputs, isDarkMode, classToggles]);
+
+  const handleDragStart = (e, className) => {
+    e.dataTransfer.setData('text/plain', className);
+  };
+
+  const addEvent = () => {
+    if (currentEvent.elementId && currentEvent.type && currentEvent.actions.length && currentEvent.target) {
+      setEvents(prev => ({
+        ...prev,
+        [currentEvent.elementId]: [
+          ...(prev[currentEvent.elementId] || []),
+          { type: currentEvent.type, actions: currentEvent.actions, target: currentEvent.target }
+        ]
+      }));
+      setCurrentEvent({ elementId: '', type: '', actions: [], target: '' });
+      setEventDialogOpen(false);
+    }
+  };
+
+  const handleDrop = (e, elementPath) => {
+    e.preventDefault();
+    const data = e.dataTransfer.getData('text');
+    if (data.startsWith('class:')) {
+      const className = data.split(':')[1];
+      setContainers(prevContainers => {
+        const newContainers = JSON.parse(JSON.stringify(prevContainers));
+        let targetElement = newContainers;
+        for (const index of elementPath) {
+          targetElement = targetElement[index].children;
+        }
+        if (!targetElement.classes.some(cls => cls === className || (typeof cls === 'object' && cls.name === className))) {
+          targetElement.classes.push({ name: className, states: [], prefixes: [] });
+        }
+        return newContainers;
+      });
+    } else if (data.startsWith('state:')) {
+      const stateName = data.split(':')[1];
+      setContainers(prevContainers => {
+        const newContainers = JSON.parse(JSON.stringify(prevContainers));
+        let targetElement = newContainers;
+        for (const index of elementPath) {
+          targetElement = targetElement[index].children;
+        }
+        const lastClass = targetElement.classes[targetElement.classes.length - 1];
+        if (typeof lastClass === 'object' && !lastClass.states.includes(stateName)) {
+          lastClass.states.push(stateName);
+        }
+        return newContainers;
+      });
+    } else if (data.startsWith('prefix:')) {
+      const prefixName = data.split(':')[1];
+      setContainers(prevContainers => {
+        const newContainers = JSON.parse(JSON.stringify(prevContainers));
+        let targetElement = newContainers;
+        for (const index of elementPath) {
+          targetElement = targetElement[index].children;
+        }
+        const lastClass = targetElement.classes[targetElement.classes.length - 1];
+        if (typeof lastClass === 'object' && !lastClass.prefixes.includes(prefixName)) {
+          lastClass.prefixes.push(prefixName);
+        }
+        return newContainers;
+      });
+    }
+  };
+
+  const removeEvent = (elementId, index) => {
+    setEvents(prev => {
+      const newEvents = { ...prev };
+      newEvents[elementId] = newEvents[elementId].filter((_, i) => i !== index);
+      return newEvents;
+    });
+  };
+
+  const toggleReactComponent = (path) => {
+    setContainers(prevContainers => {
+      const newContainers = JSON.parse(JSON.stringify(prevContainers));
+      let targetElement = newContainers;
+      for (const index of path) {
+        targetElement = targetElement[index].children;
+      }
+      targetElement.isReactComponent = !targetElement.isReactComponent;
+      return newContainers;
+    });
+  };
+
+  const toggleStoryComponent = (path) => {
+    setContainers(prevContainers => {
+      const newContainers = JSON.parse(JSON.stringify(prevContainers));
+      let targetElement = newContainers;
+      for (const index of path) {
+        targetElement = targetElement[index].children;
+      }
+      targetElement.isStoryComponent = !targetElement.isStoryComponent;
+      return newContainers;
+    });
+  };
+
+  const generateElementTree = (element, path = '') => {
+    const currentPath = path ? `${path}/${element.id}` : element.id;
+    return (
+      <TreeItem
+        key={currentPath}
+        id={currentPath}
+        label={`${element.type} (${element.id})`}
+      >
+        {element.children && element.children.map(child => generateElementTree(child, currentPath))}
+      </TreeItem>
+    );
+  };
+
+  const removeStorybookState = (stateName) => {
+    setStorybookStates(storybookStates.filter(state => state !== stateName));
+    // Remove this state from all elements
+    setContainers(prevContainers => {
+      const newContainers = JSON.parse(JSON.stringify(prevContainers));
+      const removeStateFromElement = (element) => {
+        if (element.classes) {
+          element.classes = element.classes.map(cls => {
+            if (typeof cls === 'object') {
+              return {
+                ...cls,
+                states: cls.states.filter(state => state !== stateName)
+              };
+            }
+            return cls;
+          });
+        }
+        if (element.children) {
+          element.children.forEach(removeStateFromElement);
+        }
+      };
+      newContainers.forEach(removeStateFromElement);
+      return newContainers;
+    });
+  };
+
+  const addStorybookState = () => {
+    if (newStateName && !storybookStates.includes(newStateName)) {
+      setStorybookStates([...storybookStates, newStateName]);
+      setNewStateName('');
+    }
+  };
+
+  return (
+    <ResizablePanelGroup direction="horizontal">
+      <ResizablePanel defaultSize={25}>
+      <Sidebar
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          handleDragStart={handleDragStart}
+          addContainer={addContainer}
+          addClassGroup={addClassGroup}
+          removeClassGroup={removeClassGroup}
+          setNewGroupName={setNewGroupName}
+          setNewGroupClasses={setNewGroupClasses}
+          classGroups={classGroups}
+          newGroupName={newGroupName}
+          newGroupClasses={newGroupClasses}
+          removeStorybookState={removeStorybookState}
+          storybookStates={storybookStates}
+          addStorybookState={addStorybookState}
+          newStateName={newStateName}
+          setNewStateName={setNewStateName}
+          prefixSearch={prefixSearch}
+          setPrefixSearch={setPrefixSearch}
+        />
+      </ResizablePanel>
+      <ResizablePanel defaultSize={50}>
+        <MainBuilder
+          containers={containers}
+          setContainers={setContainers}
+          selectedElement={selectedElement}
+          setSelectedElement={setSelectedElement}
+          handleDrop={handleDrop}
+          toggleReactComponent={toggleReactComponent}
+          toggleStoryComponent={toggleStoryComponent}
+          addElement={addElement}
+          removeClass={removeClass}
+          removePrefix={removePrefix}
+        />
+      </ResizablePanel>
+      <ResizablePanel defaultSize={25}>
+        <PreviewPane 
+          previewBreakpoint={previewBreakpoint}
+          setPreviewBreakpoint={setPreviewBreakpoint}
+          isDarkMode={isDarkMode}
+          setIsDarkMode={setIsDarkMode}
+          previewHtml={previewHtml}
+          previewInputs={previewInputs}
+          handleInputChange={handleInputChange}
+          classToggles={classToggles}
+          toggleClass={toggleClass}
+          computedValues={computedValues}
+          removeComputedValue={removeComputedValue}
+          events={events} 
+          setEventDialogOpen={setEventDialogOpen}
+          containers={containers}
+          componentDocs={componentDocs}
+          removeEvent={removeEvent}
+          breakpoints={breakpoints}
+          setComputedValueDialogOpen={setComputedValueDialogOpen}
+        />
+      </ResizablePanel>
+      {eventDialogOpen && (
+        <EventDialog
+          open={eventDialogOpen}
+          onOpenChange={setEventDialogOpen}
+          currentEvent={currentEvent}
+          setCurrentEvent={setCurrentEvent}
+          addEvent={addEvent}
+          setIsSelectingTarget={setIsSelectingTarget}
+        />
+      )}
+      {isSelectingTarget && (
+        <TargetSelectorDialog
+          open={isSelectingTarget}
+          onOpenChange={setIsSelectingTarget}
+          containers={containers}
+          generateElementTree={generateElementTree}
+        />
+      )}
+      {computedValueDialogOpen && (
+        <ComputedValueDialog
+          computedValueDialogOpen={computedValueDialogOpen}
+          setComputedValueDialogOpen={setComputedValueDialogOpen}
+          setCurrentComputedValue={setCurrentComputedValue}
+          currentComputedValue={currentComputedValue}
+        />
+      )}
+    </ResizablePanelGroup>
+  );
+};
+
+export default TailwindBuilder;
+/* ================================================================================ */
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/ui/dialog.jsx"
+import { Button } from "@/ui/button.jsx"
+import { Tree } from "@/ui/tree.jsx"
+
+const TargetSelectorDialog = ({ 
+  open, 
+  onOpenChange, 
+  containers, 
+  generateElementTree 
+}) => {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Select Target Element</DialogTitle>
+        </DialogHeader>
+        <Tree>
+          {containers.map(container => generateElementTree(container))}
+        </Tree>
+        <DialogFooter>
+          <Button onClick={() => onOpenChange(false)}>Cancel</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default TargetSelectorDialog;
+/* ================================================================================ */
+import { Smartphone, Tablet, Monitor } from 'lucide-react';
+
+export const ElementTypes = {
+  CONTAINER: 'container',
+  SPAN: 'span',
+  INPUT: 'input',
+  BUTTON: 'button',
+  HEADING: 'heading',
+  PARAGRAPH: 'paragraph',
+  UNORDERED_LIST: 'ul',
+  ORDERED_LIST: 'ol',
+  LIST_ITEM: 'li',
+  IMAGE: 'img',
+  LINK: 'a',
+  SELECT: 'select',
+  CHECKBOX: 'checkbox',
+  RADIO: 'radio',
+  SLIDER: 'slider',
+};
+
+export const initialElements = [
+  // Initial elements if any
+];
+
+export const tailwindCategories = [
+    {
+        name: "Layout",
+        subcategories: [
+          {
+            name: "Container",
+            classes: ["container", "mx-auto"]
+          },
+          {
+            name: "Display",
+            classes: ["block", "inline-block", "inline", "flex", "inline-flex", "grid", "inline-grid", "hidden"]
+          },
+          {
+            name: "Flexbox",
+            classes: ["flex-row", "flex-col", "flex-wrap", "flex-nowrap", "justify-start", "justify-end", "justify-center", "justify-between", "items-start", "items-end", "items-center"]
+          },
+          {
+            name: "Grid",
+            classes: ["grid-cols-1", "grid-cols-2", "grid-cols-3", "grid-cols-4", "gap-1", "gap-2", "gap-4", "gap-8"]
+          }
+        ]
+      },
+      {
+        name: "Typography",
+        subcategories: [
+          {
+            name: "Font Family",
+            classes: ["font-sans", "font-serif", "font-mono"]
+          },
+          {
+            name: "Font Size",
+            classes: ["text-xs", "text-sm", "text-base", "text-lg", "text-xl", "text-2xl", "text-3xl"]
+          },
+          {
+            name: "Font Weight",
+            classes: ["font-light", "font-normal", "font-medium", "font-semibold", "font-bold"]
+          },
+          {
+            name: "Text Color",
+            classes: ["text-black", "text-white", "text-gray-500", "text-red-500", "text-blue-500", "text-green-500"]
+          }
+        ]
+      },
+      {
+        name: "Spacing",
+        subcategories: [
+          {
+            name: "Padding",
+            classes: ["p-1", "p-2", "p-4", "p-8", "px-2", "py-2", "pt-2", "pr-2", "pb-2", "pl-2"]
+          },
+          {
+            name: "Margin",
+            classes: ["m-1", "m-2", "m-4", "m-8", "mx-2", "my-2", "mt-2", "mr-2", "mb-2", "ml-2"]
+          }
+        ]
+      },
+      {
+        name: "Backgrounds",
+        subcategories: [
+          {
+            name: "Background Color",
+            classes: ["bg-white", "bg-black", "bg-gray-100", "bg-red-100", "bg-blue-100", "bg-green-100"]
+          },
+          {
+            name: "Background Size",
+            classes: ["bg-auto", "bg-cover", "bg-contain"]
+          }
+        ]
+      },
+      {
+        name: "Borders",
+        subcategories: [
+          {
+            name: "Border Width",
+            classes: ["border", "border-0", "border-2", "border-4", "border-8"]
+          },
+          {
+            name: "Border Color",
+            classes: ["border-black", "border-white", "border-gray-300", "border-red-300", "border-blue-300"]
+          },
+          {
+            name: "Border Radius",
+            classes: ["rounded-none", "rounded-sm", "rounded", "rounded-lg", "rounded-full"]
+          }
+        ]
+      }
+];
+
+export const breakpoints = [
+  { name: 'Mobile', width: 375, icon: Smartphone },
+  { name: 'Tablet', width: 768, icon: Tablet },
+  { name: 'Desktop', width: 1280, icon: Monitor },
+];
+
+export const TailwindPrefixes = [
+  { name: 'hover', description: 'Styles for hover state' },
+  { name: 'focus', description: 'Styles for focus state' },
+  { name: 'active', description: 'Styles for active state' },
+  { name: 'disabled', description: 'Styles for disabled state' },
+  { name: 'sm', description: 'Small breakpoint' },
+  { name: 'md', description: 'Medium breakpoint' },
+  { name: 'lg', description: 'Large breakpoint' },
+  { name: 'xl', description: 'Extra large breakpoint' },
+  { name: '2xl', description: '2X large breakpoint' },
+  { name: 'dark', description: 'Styles for dark mode' },
+];
+/* ================================================================================ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+/* ================================================================================ */
+import React, { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import App from './App.jsx'
+import 'bootstrap/dist/css/bootstrap.min.css';
+import './index.css'
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+
+/* ================================================================================ */
+import { generateFullClassName } from '../utils.js';
+
+export const generateStorybook = (containers, computedValues, events, componentDocs) => {
+  const stories = [];
+  
+  const processElement = (element, parentPath = []) => {
+    if (element.type === 'container' && element.isStoryComponent) {
+      const componentName = getComponentName(element);
+      const storyCode = generateStoryCode(element, componentName, parentPath, computedValues, events, componentDocs);
+      stories.push({
+        name: componentName,
+        code: storyCode
+      });
+    }
+    if (element.children) {
+      element.children.forEach((child, index) => processElement(child, [...parentPath, index]));
+    }
+  };
+
+  containers.forEach((container, index) => processElement(container, [index]));
+
+  return stories;
+};
+
+const getComponentName = (element) => {
+  return `Component${element.id}`;
+};
+
+const generateStoryCode = (element, componentName, path, computedValues, events, componentDocs) => {
+  const componentCode = generateReactComponent(element, componentName, computedValues, events);
+  const docs = componentDocs[path.join('-')] || { description: '', props: [] };
+
+  // Generate variations based on states and responsive classes
+  const variations = generateVariations(element);
+
+  return `
+import React from 'react';
+import { Meta, Story, ArgsTable, Canvas } from '@storybook/addon-docs/blocks';
+import ${componentName} from './${componentName}';
+
+<Meta
+  title="Components/${componentName}"
+  component={${componentName}}
+  argTypes={{
+    ${docs.props.map(prop => `
+    ${prop.name}: {
+      description: '${prop.description}',
+      control: { type: '${prop.type}' },
+    }`).join(',\n    ')}
+  }}
+/>
+
+# ${componentName}
+
+${docs.description}
+
+<Canvas>
+  <Story name="Default">
+    {(args) => <${componentName} {...args} />}
+  </Story>
+</Canvas>
+
+## Props
+
+<ArgsTable of={${componentName}} />
+
+${variations.map(variation => `
+export const ${variation.name} = {
+  args: {
+    className: "${variation.classes.join(' ')}"
+  },
+};
+`).join('\n')}
+  `.trim();
+};
+
+const generateReactComponent = (element, componentName, computedValues, events) => {
+  const classNames = element.classes.map(generateFullClassName).join(' ');
+  const elementEvents = events[element.id] || [];
+
+  const componentCode = `
+import React, { useState, useEffect } from 'react';
+
+const ${componentName} = ({ className, ...props }) => {
+  const [state, setState] = useState({
+    // Initialize state based on inputs and computed values
+  });
+
+  useEffect(() => {
+    // Effect for computed values
+  }, [/* dependencies */]);
+
+  const handleEvent = (eventType) => {
+    ${elementEvents.map(event => `
+    if (eventType === '${event.type}') {
+      ${event.actions.map(action => `
+      // Handle ${action.type} action
+      `).join('\n')}
+    }
+    `).join('\n')}
+  };
+
+  return (
+    <div className={\`\${className} ${classNames}\`} {...props}>
+      {/* Render child elements */}
+    </div>
+  );
+};
+
+export default ${componentName};
+  `.trim();
+
+  return componentCode;
+};
+
+const generateVariations = (element) => {
+  const variations = [{ name: 'Default', classes: element.classes.map(generateFullClassName) }];
+  
+  // Generate variations based on responsive classes
+  const breakpoints = ['sm', 'md', 'lg', 'xl', '2xl'];
+  breakpoints.forEach(breakpoint => {
+    const breakpointClasses = element.classes
+      .filter(cls => typeof cls === 'object' && cls.name.startsWith(`${breakpoint}:`))
+      .map(cls => cls.name);
+    
+    if (breakpointClasses.length > 0) {
+      variations.push({
+        name: `${breakpoint.charAt(0).toUpperCase() + breakpoint.slice(1)}Screen`,
+        classes: [...variations[0].classes, ...breakpointClasses]
+      });
+    }
+  });
+
+  // Generate variations based on states (hover, focus, etc.)
+  const states = ['hover', 'focus', 'active', 'disabled'];
+  states.forEach(state => {
+    const stateClasses = element.classes
+      .filter(cls => typeof cls === 'object' && cls.name.startsWith(`${state}:`))
+      .map(cls => cls.name);
+    
+    if (stateClasses.length > 0) {
+      variations.push({
+        name: `${state.charAt(0).toUpperCase() + state.slice(1)}State`,
+        classes: [...variations[0].classes, ...stateClasses]
+      });
+    }
+  });
+
+  return variations;
+};
+
+export const exportStorybookConfig = () => {
+  return `
+module.exports = {
+  stories: ['../src/**/*.stories.@(js|jsx|ts|tsx|mdx)'],
+  addons: [
+    '@storybook/addon-links',
+    '@storybook/addon-essentials',
+    '@storybook/preset-create-react-app',
+    '@storybook/addon-docs'
+  ],
+  framework: "@storybook/react",
+  core: {
+    builder: "@storybook/builder-webpack5"
+  }
+};
+  `.trim();
+};
+/* ================================================================================ */
+import React, { createContext, useContext, useState } from 'react';
+import PropTypes from 'prop-types';
+
+const AccordionContext = createContext({
+    itemValue: '', // Default value for the item
+    openItems: new Set(), // Default value for the open items
+    toggleItem: (itemId) => {}, // No-op function as a placeholder
+    type: 'single', // Default value for the accordion type
+    isOpen: false, // Default value for the item open state
+});
+
+export const Accordion = ({ type, children }) => {
+  const [openItems, setOpenItems] = useState(new Set());
+
+  const toggleItem = (itemId) => {
+    setOpenItems((prevOpenItems) => {
+      const newOpenItems = new Set(prevOpenItems);
+      if (type === "single") {
+        newOpenItems.clear();
+      }
+      if (newOpenItems.has(itemId)) {
+        newOpenItems.delete(itemId);
+      } else {
+        newOpenItems.add(itemId);
+      }
+      return newOpenItems;
+    });
+  };
+
+  return (
+    <AccordionContext.Provider value={{ openItems, toggleItem, type, isOpen: false, itemValue: '' }}>
+      <div className="accordion">{children}</div>
+    </AccordionContext.Provider>
+  );
+};
+
+Accordion.propTypes = {
+  type: PropTypes.oneOf(['single', 'multiple']).isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+export const AccordionItem = ({ key, value, children }) => {
+  const { openItems } = useContext(AccordionContext);
+  const isOpen = openItems.has(value);
+
+  return (
+    <div key={key} className="accordion-item">
+      <AccordionContext.Provider value={{ ...useContext(AccordionContext), itemValue: value, isOpen }}>
+        {children}
+      </AccordionContext.Provider>
+    </div>
+  );
+};
+
+AccordionItem.propTypes = {
+  key: PropTypes.string,
+  value: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+export const AccordionTrigger = ({ children }) => {
+  const { itemValue, isOpen, toggleItem } = useContext(AccordionContext);
+
+  return (
+    <h2 className="accordion-header">
+      <button
+        className={`accordion-button ${isOpen ? '' : 'collapsed'}`}
+        type="button"
+        onClick={() => toggleItem(itemValue)}
+        aria-expanded={isOpen}
+      >
+        {children}
+      </button>
+    </h2>
+  );
+};
+
+AccordionTrigger.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const AccordionContent = ({ children }) => {
+  const { itemValue, isOpen } = useContext(AccordionContext);
+
+  return (
+    <div
+      id={`accordion-${itemValue}`}
+      className={`accordion-collapse collapse ${isOpen ? 'show' : ''}`}
+    >
+      <div className="accordion-body">{children}</div>
+    </div>
+  );
+};
+
+AccordionContent.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+/* ================================================================================ */
+import React from 'react';
+import PropTypes from 'prop-types';
+
+export const Badge = ({ variant, className, children, ...props }) => {
+  const baseClass = 'badge';
+  const variantClass = variant === 'outline' ? 'text-primary bg-light border border-primary' : 'bg-primary text-light';
+  
+  return (
+    <span 
+      className={`${baseClass} ${variantClass} ${className || ''}`}
+      {...props}
+    >
+      {children}
+    </span>
+  );
+};
+
+Badge.propTypes = {
+  variant: PropTypes.oneOf(['outline', 'default']),
+  className: PropTypes.string,
+  children: PropTypes.node.isRequired,
+};
+
+Badge.defaultProps = {
+  variant: 'default',
+};
+
+// Additional CSS for custom styling
+const badgeStyles = `
+.badge {
+  font-size: 0.75em;
+  font-weight: 600;
+  padding: 0.35em 0.65em;
+  border-radius: 0.25rem;
+}
+
+.badge.text-primary.bg-light {
+  background-color: transparent !important;
+}
+
+.mr-1 {
+  margin-right: 0.25rem !important;
+}
+
+.mb-1 {
+  margin-bottom: 0.25rem !important;
+}
+`;
+/* ================================================================================ */
+import React from 'react';
+import PropTypes from 'prop-types';
+
+/**
+ * @typedef {Object} ButtonProps
+ * @property {React.ReactNode} children - The content inside the button.
+ * @property {'sm' | 'md' | 'lg'} [size] - The size of the button.
+ * @property {'outline' | 'solid' | 'destructive'} [variant] - The variant of the button.
+ * @property {string} [className] - Additional CSS classes to apply to the button.
+ * @property {React.MouseEventHandler<HTMLButtonElement>} [onClick] - Callback function to handle button clicks.
+ * @property {React.Ref<HTMLButtonElement>} [ref] - Ref for the button element.
+ */
+
+/**
+ * Button component
+ * @type {React.ForwardRefExoticComponent<Omit<ButtonProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>}
+ */
+export const Button = React.forwardRef(
+  ({ children, size = 'md', variant = 'solid', className, onClick, ...props }, ref) => {
+    const sizeClass = size === 'sm' ? 'btn-sm' : '';
+    let variantClass = '';
+
+    switch (variant) {
+      case 'outline':
+        variantClass = 'btn-outline-primary';
+        break;
+      case 'destructive':
+        variantClass = 'btn-danger'; // Use Bootstrap's `btn-danger` for destructive actions
+        break;
+      default:
+        variantClass = 'btn-primary';
+        break;
+    }
+
+    return (
+      <button
+        ref={ref}
+        className={`btn ${sizeClass} ${variantClass} ${className || ''}`}
+        onClick={onClick}
+        {...props}
+      >
+        {children}
+      </button>
+    );
+  }
+);
+
+Button.displayName = 'Button';
+
+Button.propTypes = {
+  children: PropTypes.node.isRequired,
+  size: PropTypes.oneOf(['sm', 'md', 'lg']),
+  variant: PropTypes.oneOf(['outline', 'solid', 'destructive']),
+  className: PropTypes.string,
+  onClick: PropTypes.func,
+};
+
+/* ================================================================================ */
+import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
+
+export const Card = ({ children }) => {
+    return <div className="card">{children}</div>;
+  };
+  
+  Card.propTypes = {
+    children: PropTypes.node.isRequired,
+  };
+  
+  export const CardHeader = ({ children }) => {
+    return <div className="card-header">{children}</div>;
+  };
+  
+  CardHeader.propTypes = {
+    children: PropTypes.node.isRequired,
+  };
+  
+  export const CardTitle = ({ children }) => {
+    return <h5 className="card-title">{children}</h5>;
+  };
+  
+  CardTitle.propTypes = {
+    children: PropTypes.node.isRequired,
+  };
+  
+  export const CardContent = ({ children }) => {
+    return <div className="card-body">{children}</div>;
+  };
+  
+  CardContent.propTypes = {
+    children: PropTypes.node.isRequired,
+  };
+  
+  export const CardDescription = ({ children }) => {
+    return <p className="card-text">{children}</p>;
+  };
+  
+  CardDescription.propTypes = {
+    children: PropTypes.node.isRequired,
+  };
+  
+  export const CardFooter = ({ children, className }) => {
+    return <div className={`card-footer ${className || ''}`}>{children}</div>;
+  };
+  
+  CardFooter.propTypes = {
+    children: PropTypes.node.isRequired,
+    className: PropTypes.string,
+  };
+/* ================================================================================ */
+import React from 'react';
+import PropTypes from 'prop-types';
+
+/**
+ * Checkbox component that renders a styled checkbox input with a label.
+ *
+ * @type {React.ForwardRefExoticComponent<React.PropsWithoutRef<CheckboxProps> & React.RefAttributes<HTMLInputElement>>}
+ * @param {CheckboxProps} props - The props for the component.
+ * @param {React.Ref<HTMLInputElement>} ref - The ref to attach to the checkbox input element.
+ * @returns {JSX.Element} The rendered checkbox component.
+ */
+export const Checkbox = React.forwardRef(
+  ({ id, checked, onCheckedChange, className, ...props }, ref) => {
+    return (
+      <div className={`form-check ${className || ''}`}>
+        <input
+          type="checkbox"
+          className="form-check-input"
+          id={id}
+          checked={checked}
+          onChange={(e) => onCheckedChange(e.target.checked)}
+          ref={ref}
+          {...props}
+        />
+        <label className="form-check-label" htmlFor={id}>
+          {props.label}
+        </label>
+      </div>
+    );
+  }
+);
+
+Checkbox.displayName = 'Checkbox';
+
+Checkbox.propTypes = {
+  id: PropTypes.string.isRequired,
+  checked: PropTypes.bool,
+  onCheckedChange: PropTypes.func.isRequired,
+  className: PropTypes.string,
+  label: PropTypes.string,
+};
+
+Checkbox.defaultProps = {
+  checked: false,
+};
+
+/**
+ * @typedef {Object} CheckboxProps
+ * @property {string} id - The ID for the checkbox input and label.
+ * @property {boolean} [checked=false] - Whether the checkbox is checked.
+ * @property {function(boolean): void} onCheckedChange - Callback function to handle changes in the checkbox state.
+ * @property {string} [className] - Additional CSS classes to apply to the checkbox container.
+ * @property {string} [label] - The label text to display next to the checkbox.
+ */
+
+
+// Additional CSS for custom styling (optional)
+const checkboxStyles = `
+.form-check-input:checked {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.form-check-input:focus {
+  border-color: #86b7fe;
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+`;
+/* ================================================================================ */
+import React, { useRef, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { Modal } from 'bootstrap';
+
+export const AlertDialog = ({ open, onOpenChange, children }) => {
+    const modalRef = useRef(null);
+  
+    useEffect(() => {
+      const modalElement = modalRef.current;
+      const modalInstance = new Modal(modalElement, {
+        backdrop: 'static',
+        keyboard: false
+      });
+  
+      if (open) {
+        modalInstance.show();
+      } else {
+        modalInstance.hide();
+      }
+  
+      modalElement.addEventListener('hidden.bs.modal', () => onOpenChange(false));
+  
+      return () => {
+        modalInstance.dispose();
+      };
+    }, [open, onOpenChange]);
+  
+    return (
+      <div className="modal fade" tabIndex={-1} ref={modalRef}>
+        <div className="modal-dialog">
+          {children}
+        </div>
+      </div>
+    );
+  };
+  
+  AlertDialog.propTypes = {
+    open: PropTypes.bool.isRequired,
+    onOpenChange: PropTypes.func.isRequired,
+    children: PropTypes.node.isRequired,
+  };
+
+  export const Dialog = ({ open, onOpenChange, children }) => {
+    const modalRef = useRef(null);
+  
+    useEffect(() => {
+      const modalElement = modalRef.current;
+      const modalInstance = new Modal(modalElement, {
+        backdrop: 'static',
+        keyboard: false
+      });
+  
+      if (open) {
+        modalInstance.show();
+      } else {
+        modalInstance.hide();
+      }
+  
+      modalElement.addEventListener('hidden.bs.modal', () => onOpenChange(false));
+  
+      return () => {
+        modalInstance.dispose();
+      };
+    }, [open, onOpenChange]);
+  
+    return (
+      <div className="modal fade" tabIndex={-1} ref={modalRef}>
+        <div className="modal-dialog">
+          {children}
+        </div>
+      </div>
+    );
+  };
+  
+  Dialog.propTypes = {
+    open: PropTypes.bool.isRequired,
+    onOpenChange: PropTypes.func.isRequired,
+    children: PropTypes.node.isRequired,
+  };
+
+// Shared content components
+export const DialogContent = ({ children, className }) => (
+  <div className={`modal-content ${className}`}>
+    {children}
+  </div>
+);
+DialogContent.propTypes = {
+  children: PropTypes.node.isRequired,
+  className: PropTypes.string,
+};
+
+export const AlertDialogContent = ({ children }) => (
+  <div className="modal-content">
+    {children}
+  </div>
+);
+AlertDialogContent.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const DialogHeader = ({ children }) => (
+  <div className="modal-header">
+    {children}
+  </div>
+);
+DialogHeader.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const AlertDialogHeader = ({ children }) => (
+  <div className="modal-header">
+    {children}
+  </div>
+);
+AlertDialogHeader.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const DialogTitle = ({ children }) => (
+  <h5 className="modal-title">{children}</h5>
+);
+DialogTitle.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const AlertDialogTitle = ({ children }) => (
+  <h5 className="modal-title">{children}</h5>
+);
+AlertDialogTitle.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const DialogDescription = ({ children }) => (
+  <p>{children}</p>
+);
+DialogDescription.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const AlertDialogDescription = ({ children }) => (
+  <p>{children}</p>
+);
+AlertDialogDescription.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const DialogFooter = ({ children }) => (
+  <div className="modal-footer">
+    {children}
+  </div>
+);
+DialogFooter.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const AlertDialogFooter = ({ children }) => (
+  <div className="modal-footer">
+    {children}
+  </div>
+);
+AlertDialogFooter.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+// Specific button components for AlertDialog
+export const AlertDialogCancel = ({ children, ...props }) => (
+  <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" {...props}>
+    {children}
+  </button>
+);
+AlertDialogCancel.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const AlertDialogAction = ({ children, ...props }) => (
+  <button type="button" className="btn btn-primary" {...props}>
+    {children}
+  </button>
+);
+AlertDialogAction.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+/* ================================================================================ */
+import React from 'react';
+import PropTypes from 'prop-types';
+
+// DropdownMenu components
+export const DropdownMenu = ({ children }) => {
+  return <div className="dropdown">{children}</div>;
+};
+
+DropdownMenu.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const DropdownMenuTrigger = ({ asChild, children }) => {
+  const TriggerComponent = asChild ? React.Children.only(children).type : 'button';
+  
+  return (
+    <TriggerComponent
+      className="dropdown-toggle"
+      type="button"
+      data-bs-toggle="dropdown"
+      aria-expanded="false"
+    >
+      {children}
+    </TriggerComponent>
+  );
+};
+
+DropdownMenuTrigger.propTypes = {
+  asChild: PropTypes.bool,
+  children: PropTypes.node.isRequired,
+};
+
+export const DropdownMenuContent = ({ children }) => {
+  return <ul className="dropdown-menu">{children}</ul>;
+};
+
+DropdownMenuContent.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const DropdownMenuItem = ({ onSelect, children }) => {
+  return (
+    <li>
+      <a className="dropdown-item" href="#" onClick={(e) => {
+        e.preventDefault();
+        onSelect();
+      }}>
+        {children}
+      </a>
+    </li>
+  );
+};
+
+DropdownMenuItem.propTypes = {
+  onSelect: PropTypes.func.isRequired,
+  children: PropTypes.node.isRequired,
+};
+/* ================================================================================ */
+import React from 'react';
+import PropTypes from 'prop-types';
+
+/**
+ * Input component that renders a styled input element.
+ *
+ * @type {React.ForwardRefExoticComponent<React.PropsWithoutRef<InputProps> & React.RefAttributes<HTMLInputElement>>}
+ * @param {InputProps} props - The props for the component.
+ * @param {React.Ref<HTMLInputElement>} ref - The ref to attach to the input element.
+ * @returns {JSX.Element} The rendered input element.
+ */
+export const Input = React.forwardRef(
+  ({ className, id, type = 'text', ...props }, ref) => {
+    return (
+      <input
+        id={id}
+        type={type}
+        className={`form-control ${className || ''}`}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+
+Input.displayName = 'Input';
+
+Input.propTypes = {
+  className: PropTypes.string,
+  id: PropTypes.string,
+  type: PropTypes.string,
+  value: PropTypes.string,
+  onChange: PropTypes.func,
+  placeholder: PropTypes.string,
+};
+
+/**
+ * @typedef {Object} InputProps
+ * @property {string} [className] - Additional CSS classes to apply to the input.
+ * @property {string} [id] - The ID for the input element.
+ * @property {string} [type='text'] - The type of the input (e.g., "text", "password").
+ * @property {string} [value] - The value of the input.
+ * @property {React.ChangeEventHandler<HTMLInputElement>} [onChange] - Callback function to handle input changes.
+ * @property {string} [placeholder] - Placeholder text for the input.
+ */
+
+/* ================================================================================ */
+import React from 'react';
+import PropTypes from 'prop-types';
+
+export const Label = ({ htmlFor, children, className }) => {
+    return (
+      <label htmlFor={htmlFor} className={`form-check-label ${className || ''}`}>
+        {children}
+      </label>
+    );
+  };
+  
+  Label.propTypes = {
+    htmlFor: PropTypes.string,
+    children: PropTypes.node.isRequired,
+    className: PropTypes.string,
+  };
+/* ================================================================================ */
+import React, { useState, useEffect, useRef, cloneElement } from 'react';
+import PropTypes from 'prop-types';
+import { Popover as BSPopover } from 'bootstrap';
+
+export const Popover = ({ children, open }) => {
+  const [isOpen, setIsOpen] = useState(open);
+  const triggerRef = useRef(null);
+  const contentRef = useRef(null);
+  const popoverRef = useRef(null);
+
+  useEffect(() => {
+    if (triggerRef.current && contentRef.current) {
+      popoverRef.current = new BSPopover(triggerRef.current, {
+        content: contentRef.current,
+        html: true,
+        trigger: 'manual',
+        placement: 'auto',
+      });
+    }
+    return () => {
+      if (popoverRef.current) {
+        popoverRef.current.dispose();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (popoverRef.current) {
+      if (isOpen) {
+        popoverRef.current.show();
+      } else {
+        popoverRef.current.hide();
+      }
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    setIsOpen(open);
+  }, [open]);
+
+  return (
+    <>
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child, { triggerRef, contentRef });
+        }
+        return child;
+      })}
+    </>
+  );
+};
+
+Popover.propTypes = {
+  children: PropTypes.node.isRequired,
+  open: PropTypes.bool,
+};
+
+export const PopoverTrigger = ({ children, triggerRef }) => {
+  return React.cloneElement(children, { ref: triggerRef });
+};
+
+PopoverTrigger.propTypes = {
+  children: PropTypes.element.isRequired,
+  triggerRef: PropTypes.oneOfType([
+    PropTypes.func, 
+    PropTypes.shape({ current: PropTypes.instanceOf(Element) })
+  ]),
+};
+
+export const PopoverContent = ({ children, contentRef }) => {
+  return <div ref={contentRef}>{children}</div>;
+};
+
+PopoverContent.propTypes = {
+  children: PropTypes.node.isRequired,
+  contentRef: PropTypes.oneOfType([
+    PropTypes.func, 
+    PropTypes.shape({ current: PropTypes.instanceOf(Element) })
+  ]),
+};
+
+/* ================================================================================ */
+import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
+
+const useResizable = (defaultSize, minSize = 10, maxSize = 90) => {
+  const [size, setSize] = useState(defaultSize);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const startSize = useRef(0);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging.current) return;
+      const dx = e.clientX - startX.current;
+      const newSize = Math.min(Math.max(startSize.current + dx / window.innerWidth * 100, minSize), maxSize);
+      setSize(newSize);
+    };
+
+    const handleMouseUp = () => {
+      isDragging.current = false;
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [minSize, maxSize]);
+
+  const startResize = (e) => {
+    isDragging.current = true;
+    startX.current = e.clientX;
+    startSize.current = size;
+  };
+
+  return [size, startResize];
+};
+
+export const ResizablePanel = ({ defaultSize, children }) => {
+  const [size, startResize] = useResizable(defaultSize);
+
+  return (
+    <div className="d-flex flex-column h-100" style={{ width: `${size}%` }}>
+      {children}
+      <div
+        className="resizer"
+        style={{
+          width: '10px',
+          cursor: 'col-resize',
+          backgroundColor: '#f0f0f0',
+          position: 'absolute',
+          right: 0,
+          top: 0,
+          bottom: 0,
+        }}
+        onMouseDown={startResize}
+      />
+    </div>
+  );
+};
+
+ResizablePanel.propTypes = {
+  defaultSize: PropTypes.number.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+export const ResizablePanelGroup = ({ direction, children }) => {
+  return (
+    <div className={`d-flex ${direction === 'horizontal' ? 'flex-row' : 'flex-column'} h-100`}>
+      {children}
+    </div>
+  );
+};
+
+ResizablePanelGroup.propTypes = {
+  direction: PropTypes.oneOf(['horizontal', 'vertical']).isRequired,
+  children: PropTypes.node.isRequired,
+};
+/* ================================================================================ */
+import React from 'react';
+import PropTypes from 'prop-types';
+
+export const ScrollArea = ({ className, children, ...props }) => {
+  return (
+    <div className={`scroll-area ${className || ''}`} {...props}>
+      {children}
+    </div>
+  );
+};
+
+ScrollArea.propTypes = {
+  className: PropTypes.string,
+  children: PropTypes.node.isRequired,
+};
+
+// CSS to be added to your project
+const scrollAreaStyles = `
+.scroll-area {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #6c757d transparent;
+}
+
+.scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-area::-webkit-scrollbar-thumb {
+  background-color: #6c757d;
+  border-radius: 3px;
+}
+`;
+/* ================================================================================ */
+import React, { createContext, useContext, useState } from 'react';
+import PropTypes from 'prop-types';
+
+const SelectContext = createContext({
+    value: '',
+    onValueChange: (value) => {},
+    isOpen: false,
+    setIsOpen: (isOpen) => {},
+  });
+
+export const Select = ({ children, value, onValueChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <SelectContext.Provider value={{ value, onValueChange, isOpen, setIsOpen }}>
+      <div className="dropdown">
+        {children}
+      </div>
+    </SelectContext.Provider>
+  );
+};
+
+Select.propTypes = {
+  children: PropTypes.node.isRequired,
+  value: PropTypes.string,
+  onValueChange: PropTypes.func.isRequired,
+};
+
+export const SelectTrigger = ({ className, children }) => {
+  const { isOpen, setIsOpen } = useContext(SelectContext);
+
+  return (
+    <button
+      className={`btn btn-secondary dropdown-toggle w-100 text-start ${className}`}
+      type="button"
+      onClick={() => setIsOpen(!isOpen)}
+      aria-expanded={isOpen}
+    >
+      {children}
+    </button>
+  );
+};
+
+SelectTrigger.propTypes = {
+    className: PropTypes.string,
+  children: PropTypes.node.isRequired,
+};
+
+export const SelectValue = ({ placeholder }) => {
+  const { value } = useContext(SelectContext);
+
+  return <span>{value || placeholder}</span>;
+};
+
+SelectValue.propTypes = {
+  placeholder: PropTypes.string,
+};
+
+export const SelectContent = ({ children }) => {
+  const { isOpen } = useContext(SelectContext);
+
+  return (
+    <ul className={`dropdown-menu w-100 ${isOpen ? 'show' : ''}`}>
+      {children}
+    </ul>
+  );
+};
+
+SelectContent.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const SelectItem = ({ children, key, value }) => {
+  const { onValueChange, setIsOpen } = useContext(SelectContext);
+
+  const handleClick = () => {
+    onValueChange(value);
+    setIsOpen(false);
+  };
+
+  return (
+    <li key={key}>
+      <a className="dropdown-item" href="#" onClick={handleClick}>
+        {children}
+      </a>
+    </li>
+  );
+};
+
+SelectItem.propTypes = {
+  children: PropTypes.node.isRequired,
+  key: PropTypes.string,
+  value: PropTypes.string.isRequired,
+};
+
+/* ================================================================================ */
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+
+export const Slider = ({ id, min, max, step, value, onValueChange }) => {
+  const [localValue, setLocalValue] = useState(value[0]);
+
+  useEffect(() => {
+    setLocalValue(value[0]);
+  }, [value]);
+
+  const handleChange = (e) => {
+    const newValue = parseFloat(e.target.value);
+    setLocalValue(newValue);
+    onValueChange([newValue]);
+  };
+
+  return (
+    <div className="slider-container">
+      <input
+        type="range"
+        className="form-range"
+        id={id}
+        min={min}
+        max={max}
+        step={step}
+        value={localValue}
+        onChange={handleChange}
+      />
+      <div className="slider-value">{localValue}</div>
+    </div>
+  );
+};
+
+Slider.propTypes = {
+  id: PropTypes.string.isRequired,
+  min: PropTypes.number,
+  max: PropTypes.number,
+  step: PropTypes.number,
+  value: PropTypes.arrayOf(PropTypes.number).isRequired,
+  onValueChange: PropTypes.func.isRequired,
+};
+
+Slider.defaultProps = {
+  min: 0,
+  max: 100,
+  step: 1,
+};
+
+// CSS to be added to your project
+const sliderStyles = `
+.slider-container {
+  position: relative;
+  padding: 10px 0;
+}
+
+.slider-value {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #007bff;
+  color: white;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+}
+
+.form-range::-webkit-slider-thumb {
+  background: #007bff;
+}
+
+.form-range::-moz-range-thumb {
+  background: #007bff;
+}
+
+.form-range::-ms-thumb {
+  background: #007bff;
+}
+`;
+/* ================================================================================ */
+import React from 'react';
+import PropTypes from 'prop-types';
+
+const StepContext = React.createContext({
+  current: 0,
+  onChange: (current) => {},
+  totalSteps: 0,
+});
+
+export const Steps = ({ current, onChange, children }) => {
+  const totalSteps = React.Children.count(children);
+
+  return (
+    <StepContext.Provider value={{ current, onChange, totalSteps }}>
+      <div className="steps d-flex justify-content-between align-items-center">
+        {React.Children.map(children, (child, index) =>
+          React.cloneElement(child, { index, totalSteps })
+        )}
+      </div>
+    </StepContext.Provider>
+  );
+};
+
+Steps.propTypes = {
+  current: PropTypes.number.isRequired,
+  onChange: PropTypes.func.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+const Step = ({ index, title, totalSteps }) => {
+  const { current, onChange } = React.useContext(StepContext);
+
+  const status =
+    index < current ? 'complete' : index === current ? 'current' : 'upcoming';
+
+  return (
+    <div
+      className={`step ${status} ${index === 0 ? 'first' : ''} ${
+        index === totalSteps - 1 ? 'last' : ''
+      }`}
+      onClick={() => onChange(index)}
+    >
+      <div className="step-indicator">{status === 'complete' ? '✓' : index + 1}</div>
+      <div className="step-title">{title}</div>
+    </div>
+  );
+};
+
+Step.propTypes = {
+  index: PropTypes.number,
+  title: PropTypes.string.isRequired,
+  totalSteps: PropTypes.number.isRequired,
+};
+
+Steps.Step = Step;
+
+/* ================================================================================ */
+import React from 'react';
+import PropTypes from 'prop-types';
+
+export const Switch = ({ id, checked, onCheckedChange }) => {
+  return (
+    <div className="form-check form-switch">
+      <input
+        className="form-check-input"
+        type="checkbox"
+        role="switch"
+        id={id}
+        checked={checked}
+        onChange={(e) => onCheckedChange(e.target.checked)}
+      />
+    </div>
+  );
+};
+
+Switch.propTypes = {
+  id: PropTypes.string,
+  checked: PropTypes.bool.isRequired,
+  onCheckedChange: PropTypes.func.isRequired,
+};
+/* ================================================================================ */
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+
+const TabsContext = createContext({
+    activeTab: '', // Default value for the active tab
+    setActiveTab: (tab) => {}, // No-op function as a placeholder
+  });
+
+export const Tabs = ({ defaultValue, children }) => {
+  const [activeTab, setActiveTab] = useState(defaultValue);
+
+  return (
+    <TabsContext.Provider value={{ activeTab, setActiveTab }}>
+      <div className="tabs">{children}</div>
+    </TabsContext.Provider>
+  );
+};
+
+Tabs.propTypes = {
+  defaultValue: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+export const TabsList = ({ children }) => {
+  return (
+    <ul className="nav nav-tabs mb-3" role="tablist">
+      {children}
+    </ul>
+  );
+};
+
+TabsList.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const TabsTrigger = ({ value, children }) => {
+  const { activeTab, setActiveTab } = useContext(TabsContext);
+
+  return (
+    <li className="nav-item" role="presentation">
+      <button
+        className={`nav-link ${activeTab === value ? 'active' : ''}`}
+        id={`${value}-tab`}
+        data-bs-toggle="tab"
+        data-bs-target={`#${value}`}
+        type="button"
+        role="tab"
+        aria-controls={value}
+        aria-selected={activeTab === value}
+        onClick={() => setActiveTab(value)}
+      >
+        {children}
+      </button>
+    </li>
+  );
+};
+
+TabsTrigger.propTypes = {
+  value: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+export const TabsContent = ({ value, children }) => {
+  const { activeTab } = useContext(TabsContext);
+
+  return (
+    <div
+      className={`tab-pane fade ${activeTab === value ? 'show active' : ''}`}
+      id={value}
+      role="tabpanel"
+      aria-labelledby={`${value}-tab`}
+    >
+      {children}
+    </div>
+  );
+};
+
+TabsContent.propTypes = {
+  value: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+};
+/* ================================================================================ */
+import React from 'react';
+import PropTypes from 'prop-types';
+
+/**
+ * Textarea component that renders a styled textarea element.
+ *
+ * @type {React.ForwardRefExoticComponent<React.PropsWithoutRef<TextareaProps> & React.RefAttributes<HTMLTextAreaElement>>}
+ * @param {TextareaProps} props - The props for the component.
+ * @param {React.Ref<HTMLTextAreaElement>} ref - The ref to attach to the textarea element.
+ * @returns {JSX.Element} The rendered textarea element.
+ */
+export const Textarea = React.forwardRef(
+  ({ className, ...props }, ref) => {
+    return (
+      <textarea
+        className={`form-control ${className || ''}`}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+
+Textarea.displayName = 'Textarea';
+
+Textarea.propTypes = {
+  className: PropTypes.string,
+  placeholder: PropTypes.string,
+  value: PropTypes.string,
+  onChange: PropTypes.func,
+};
+
+/**
+ * @typedef {Object} TextareaProps
+ * @property {string} [className] - Additional CSS classes to apply to the textarea.
+ * @property {string} [placeholder] - Placeholder text for the textarea.
+ * @property {string} [value] - The value of the textarea.
+ * @property {React.ChangeEventHandler<HTMLTextAreaElement>} [onChange] - Callback function to handle textarea changes.
+ */
+
+/* ================================================================================ */
+import React, { createContext, useContext, useState } from 'react';
+import PropTypes from 'prop-types';
+
+const TreeContext = createContext({});
+
+export const Tree = ({ children }) => {
+  return (
+    <TreeContext.Provider value={{}}>
+      <ul className="list-unstyled">{children}</ul>
+    </TreeContext.Provider>
+  );
+};
+
+Tree.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const TreeItem = ({ id, key, label, children }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const hasChildren = React.Children.count(children) > 0;
+
+  const toggleOpen = () => {
+    setIsOpen(!isOpen);
+  };
+
+  return (
+    <li key={key}>
+      <div className="d-flex align-items-center">
+        {hasChildren && (
+          <button
+            className="btn btn-sm me-2"
+            onClick={toggleOpen}
+            aria-expanded={isOpen}
+          >
+            {isOpen ? '▼' : '▶'}
+          </button>
+        )}
+        <span>{label}</span>
+      </div>
+      {hasChildren && isOpen && (
+        <ul className="list-unstyled ms-4 mt-2">{children}</ul>
+      )}
+    </li>
+  );
+};
+
+TreeItem.propTypes = {
+  id: PropTypes.string.isRequired,
+  key: PropTypes.string,
+  label: PropTypes.string.isRequired,
+  children: PropTypes.node,
+};
+
+// Custom CSS to be added to your project
+const treeStyles = `
+.tree-item {
+  cursor: pointer;
+}
+.tree-item:hover {
+  background-color: #f8f9fa;
+}
+`;
+/* ================================================================================ */
+  export const generateFullClassName = (cls) => {
+    if (typeof cls === 'string') return cls;
+    const prefixes = cls.prefixes.length > 0 ? cls.prefixes.join(':') + ':' : '';
+    return `${prefixes}${cls.name}`;
+  };

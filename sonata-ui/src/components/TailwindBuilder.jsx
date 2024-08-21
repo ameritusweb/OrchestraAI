@@ -28,6 +28,47 @@ const TailwindBuilder = () => {
   const [componentDocs, setComponentDocs] = useState({});
   const [computedValueDialogOpen, setComputedValueDialogOpen] = useState(false);
   const [currentComputedValue, setCurrentComputedValue] = useState({ id: '', name: '', formula: '' });
+  const [classGroups, setClassGroups] = useState([]);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupClasses, setNewGroupClasses] = useState('');
+  const [prefixSearch, setPrefixSearch] = useState('');
+  const [storybookStates, setStorybookStates] = useState([]);
+  const [newStateName, setNewStateName] = useState('');
+
+  const removePrefix = (elementPath, className, prefixToRemove) => {
+    setContainers(prevContainers => {
+      const newContainers = JSON.parse(JSON.stringify(prevContainers));
+      let targetElement = newContainers;
+      for (const index of elementPath) {
+        targetElement = targetElement[index].children;
+      }
+      targetElement.classes = targetElement.classes.map(cls => {
+        if (typeof cls === 'object' && cls.name === className) {
+          return {
+            ...cls,
+            prefixes: cls.prefixes.filter(prefix => prefix !== prefixToRemove)
+          };
+        }
+        return cls;
+      });
+      return newContainers;
+    });
+  };
+
+  const addClassGroup = () => {
+    if (newGroupName && newGroupClasses) {
+      setClassGroups([...classGroups, {
+        name: newGroupName,
+        classes: newGroupClasses.split(' ').filter(Boolean),
+      }]);
+      setNewGroupName('');
+      setNewGroupClasses('');
+    }
+  };
+
+  const removeClassGroup = (index) => {
+    setClassGroups(classGroups.filter((_, i) => i !== index));
+  };
 
   const removeComputedValue = (id) => {
     setComputedValues(prev => {
@@ -116,46 +157,6 @@ const TailwindBuilder = () => {
     });
   };
 
-  const handleEvent = (elementId, eventType) => {
-    const elementEvents = events[elementId] || [];
-    elementEvents.forEach(event => {
-      if (event.type === eventType) {
-        const [action, value] = event.action.split(':');
-        const targetPath = event.target.split('/').filter(Boolean);
-        
-        setPreviewInputs(prev => {
-          const newInputs = { ...prev };
-          let target = newInputs;
-          for (let i = 0; i < targetPath.length - 1; i++) {
-            if (!target[targetPath[i]]) {
-              target[targetPath[i]] = {};
-            }
-            target = target[targetPath[i]];
-          }
-          const lastKey = targetPath[targetPath.length - 1];
-          
-          switch (action) {
-            case 'set':
-              target[lastKey] = value;
-              break;
-            case 'toggle':
-              target[lastKey] = !target[lastKey];
-              break;
-            case 'increment':
-              target[lastKey] = (parseFloat(target[lastKey]) || 0) + parseFloat(value);
-              break;
-            case 'decrement':
-              target[lastKey] = (parseFloat(target[lastKey]) || 0) - parseFloat(value);
-              break;
-            // Add more action types as needed
-          }
-          
-          return newInputs;
-        });
-      }
-    });
-  };
-
   const generatePreviewHtml = () => {
     let html = '';
     const generateElementHtml = (element) => {
@@ -167,26 +168,31 @@ const TailwindBuilder = () => {
         .map(generateFullClassName)
         .join(' ');
 
+        const elementEvents = events[element.id] || [];
+      const eventAttributes = elementEvents.map(event => 
+        `on${event.type}="handleEvent('${element.id}', '${event.type}')"`
+      ).join(' ');
+
       switch (element.type) {
         case ElementTypes.CONTAINER:
-          return `<div class="${activeClasses}">${element.children.map(generateElementHtml).join('')}</div>`;
+          return `<div class="${activeClasses}" ${eventAttributes}>${element.children.map(generateElementHtml).join('')}</div>`;
         case ElementTypes.SPAN:
-          return `<span class="${activeClasses}">${element.content}</span>`;
+          return `<span class="${activeClasses}" ${eventAttributes}>${element.content}</span>`;
         case ElementTypes.INPUT:
           const inputId = `input-${element.id}`;
           const inputValue = previewInputs[inputId] || '';
-          return `<input id="${inputId}" class="${activeClasses}" type="text" value="${inputValue}" placeholder="${element.content || 'Input'}" />`;
+          return `<input id="${inputId}" class="${activeClasses}" type="text" value="${inputValue}" placeholder="${element.content || 'Input'}" ${eventAttributes} />`;
         case ElementTypes.BUTTON:
-          return `<button class="${activeClasses}">${element.content || 'Button'}</button>`;
+          return `<button class="${activeClasses}">${element.content || 'Button'} ${eventAttributes}</button>`;
         case ElementTypes.HEADING:
-          return `<h2 class="${activeClasses}">${element.content || 'Heading'}</h2>`;
+          return `<h2 class="${activeClasses}" ${eventAttributes}>${element.content || 'Heading'}</h2>`;
         case ElementTypes.PARAGRAPH:
-          return `<p class="${activeClasses}">${element.content || 'Paragraph text'}</p>`;
+          return `<p class="${activeClasses}" ${eventAttributes}>${element.content || 'Paragraph text'}</p>`;
         case ElementTypes.SELECT:
           const selectId = `select-${element.id}`;
           const selectValue = previewInputs[selectId] || '';
           return `
-            <select id="${selectId}" class="${activeClasses}">
+            <select id="${selectId}" class="${activeClasses}" ${eventAttributes}>
               ${(element.options || []).map((option) =>
                 `<option value="${option}" ${selectValue === option ? 'selected' : ''}>${option}</option>`
               ).join('')}
@@ -196,7 +202,7 @@ const TailwindBuilder = () => {
           const checkboxId = `checkbox-${element.id}`;
           const isChecked = previewInputs[checkboxId] || false;
           return `
-            <div class="flex items-center">
+            <div class="flex items-center" ${eventAttributes}>
               <input type="checkbox" id="${checkboxId}" class="${activeClasses}" ${isChecked ? 'checked' : ''} />
               <label for="${checkboxId}" class="ml-2">${element.content || 'Checkbox'}</label>
             </div>
@@ -209,7 +215,7 @@ const TailwindBuilder = () => {
                 const radioId = `${radioName}-${index}`;
                 const isChecked = previewInputs[radioName] === option;
                 return `
-                  <div class="flex items-center mb-2">
+                  <div class="flex items-center mb-2" ${eventAttributes}>
                     <input type="radio" id="${radioId}" name="${radioName}" value="${option}" class="${activeClasses}" ${isChecked ? 'checked' : ''} />
                     <label for="${radioId}" class="ml-2">${option}</label>
                   </div>
@@ -221,7 +227,7 @@ const TailwindBuilder = () => {
           const sliderId = `slider-${element.id}`;
           const sliderValue = previewInputs[sliderId] || element.min || 0;
           return `
-            <div class="${activeClasses}">
+            <div class="${activeClasses}" ${eventAttributes}>
               <input type="range" id="${sliderId}" min="${element.min || 0}" max="${element.max || 100}" value="${sliderValue}" class="w-full" />
               <p>Value: ${sliderValue}</p>
             </div>
@@ -259,29 +265,49 @@ const TailwindBuilder = () => {
 
   const handleDrop = (e, elementPath) => {
     e.preventDefault();
-    const className = e.dataTransfer.getData('text');
-  
-    setContainers(prevContainers => {
-      const newContainers = [...prevContainers]; // Shallow copy of the containers array
-      let targetElement = newContainers[elementPath[0]];
-  
-      // Traverse the path to the correct element
-      for (let i = 1; i < elementPath.length; i++) {
-        if (targetElement.children) {
-          targetElement = targetElement.children[elementPath[i]];
-        } else {
-          console.error("Target element doesn't have children at the specified path");
-          return prevContainers; // Exit early if the path is invalid
+    const data = e.dataTransfer.getData('text');
+    if (data.startsWith('class:')) {
+      const className = data.split(':')[1];
+      setContainers(prevContainers => {
+        const newContainers = JSON.parse(JSON.stringify(prevContainers));
+        let targetElement = newContainers;
+        for (const index of elementPath) {
+          targetElement = targetElement[index].children;
         }
-      }
-  
-      // Add the className if it doesn't already exist
-      if (!targetElement.classes.includes(className)) {
-        targetElement.classes.push(className);
-      }
-  
-      return newContainers;
-    });
+        if (!targetElement.classes.some(cls => cls === className || (typeof cls === 'object' && cls.name === className))) {
+          targetElement.classes.push({ name: className, states: [], prefixes: [] });
+        }
+        return newContainers;
+      });
+    } else if (data.startsWith('state:')) {
+      const stateName = data.split(':')[1];
+      setContainers(prevContainers => {
+        const newContainers = JSON.parse(JSON.stringify(prevContainers));
+        let targetElement = newContainers;
+        for (const index of elementPath) {
+          targetElement = targetElement[index].children;
+        }
+        const lastClass = targetElement.classes[targetElement.classes.length - 1];
+        if (typeof lastClass === 'object' && !lastClass.states.includes(stateName)) {
+          lastClass.states.push(stateName);
+        }
+        return newContainers;
+      });
+    } else if (data.startsWith('prefix:')) {
+      const prefixName = data.split(':')[1];
+      setContainers(prevContainers => {
+        const newContainers = JSON.parse(JSON.stringify(prevContainers));
+        let targetElement = newContainers;
+        for (const index of elementPath) {
+          targetElement = targetElement[index].children;
+        }
+        const lastClass = targetElement.classes[targetElement.classes.length - 1];
+        if (typeof lastClass === 'object' && !lastClass.prefixes.includes(prefixName)) {
+          lastClass.prefixes.push(prefixName);
+        }
+        return newContainers;
+      });
+    }
   };
 
   const removeEvent = (elementId, index) => {
@@ -329,6 +355,39 @@ const TailwindBuilder = () => {
     );
   };
 
+  const removeStorybookState = (stateName) => {
+    setStorybookStates(storybookStates.filter(state => state !== stateName));
+    // Remove this state from all elements
+    setContainers(prevContainers => {
+      const newContainers = JSON.parse(JSON.stringify(prevContainers));
+      const removeStateFromElement = (element) => {
+        if (element.classes) {
+          element.classes = element.classes.map(cls => {
+            if (typeof cls === 'object') {
+              return {
+                ...cls,
+                states: cls.states.filter(state => state !== stateName)
+              };
+            }
+            return cls;
+          });
+        }
+        if (element.children) {
+          element.children.forEach(removeStateFromElement);
+        }
+      };
+      newContainers.forEach(removeStateFromElement);
+      return newContainers;
+    });
+  };
+
+  const addStorybookState = () => {
+    if (newStateName && !storybookStates.includes(newStateName)) {
+      setStorybookStates([...storybookStates, newStateName]);
+      setNewStateName('');
+    }
+  };
+
   return (
     <ResizablePanelGroup direction="horizontal">
       <ResizablePanel defaultSize={25}>
@@ -337,6 +396,20 @@ const TailwindBuilder = () => {
           setSearchTerm={setSearchTerm}
           handleDragStart={handleDragStart}
           addContainer={addContainer}
+          addClassGroup={addClassGroup}
+          removeClassGroup={removeClassGroup}
+          setNewGroupName={setNewGroupName}
+          setNewGroupClasses={setNewGroupClasses}
+          classGroups={classGroups}
+          newGroupName={newGroupName}
+          newGroupClasses={newGroupClasses}
+          removeStorybookState={removeStorybookState}
+          storybookStates={storybookStates}
+          addStorybookState={addStorybookState}
+          newStateName={newStateName}
+          setNewStateName={setNewStateName}
+          prefixSearch={prefixSearch}
+          setPrefixSearch={setPrefixSearch}
         />
       </ResizablePanel>
       <ResizablePanel defaultSize={50}>
@@ -350,6 +423,7 @@ const TailwindBuilder = () => {
           toggleStoryComponent={toggleStoryComponent}
           addElement={addElement}
           removeClass={removeClass}
+          removePrefix={removePrefix}
         />
       </ResizablePanel>
       <ResizablePanel defaultSize={25}>
