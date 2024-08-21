@@ -25,9 +25,9 @@ const PreviewPane = ({
   events,
   setEventDialogOpen,
   removeEvent,
-  generateStorybook,
-  exportStorybookConfig,
-  breakpoints
+  breakpoints,
+  containers,
+  componentDocs,
 }) => {
   return (
     <div className="h-screen p-4 overflow-y-auto">
@@ -81,7 +81,7 @@ const PreviewPane = ({
           <EventsTab events={events} setEventDialogOpen={setEventDialogOpen} removeEvent={removeEvent} />
         </TabsContent>
         <TabsContent value="storybook">
-          <StorybookTab generateStorybook={generateStorybook} exportStorybookConfig={exportStorybookConfig} />
+          <StorybookTab containers={containers} computedValues={computedValues} events={events} componentDocs={componentDocs} />
         </TabsContent>
       </Tabs>
       <div 

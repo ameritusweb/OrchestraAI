@@ -5,9 +5,16 @@ import { Button } from '@/ui/button.jsx';
 import { Label } from '@/ui/label.jsx';
 import { Input } from '@/ui/input.jsx';
 
-const EventDialog = ({ currentEvent, setCurrentEvent, addEvent, setEventDialogOpen, setIsSelectingTarget }) => {
+const EventDialog = ({ 
+  open, 
+  onOpenChange, 
+  currentEvent, 
+  setCurrentEvent, 
+  addEvent, 
+  setIsSelectingTarget 
+}) => {
   return (
-    <AlertDialog open={true} onOpenChange={setEventDialogOpen}>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Add Event</AlertDialogTitle>
@@ -17,7 +24,9 @@ const EventDialog = ({ currentEvent, setCurrentEvent, addEvent, setEventDialogOp
         </AlertDialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="elementId" className="text-right">Element ID</Label>
+            <Label htmlFor="elementId" className="text-right">
+              Element ID
+            </Label>
             <Input
               id="elementId"
               value={currentEvent.elementId}
@@ -26,7 +35,9 @@ const EventDialog = ({ currentEvent, setCurrentEvent, addEvent, setEventDialogOp
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="eventType" className="text-right">Event Type</Label>
+            <Label htmlFor="eventType" className="text-right">
+              Event Type
+            </Label>
             <Select
               value={currentEvent.type}
               onValueChange={(value) => setCurrentEvent(prev => ({ ...prev, type: value }))}
@@ -89,17 +100,23 @@ const EventDialog = ({ currentEvent, setCurrentEvent, addEvent, setEventDialogOp
                   <Button variant="destructive" size="sm" onClick={() => {
                     const newActions = currentEvent.actions.filter((_, i) => i !== index);
                     setCurrentEvent(prev => ({ ...prev, actions: newActions }));
-                  }} className="mt-2">Remove Action</Button>
+                  }} className="mt-2">
+                    Remove Action
+                  </Button>
                 </div>
               ))}
               <Button onClick={() => {
                 const newActions = [...(currentEvent.actions || []), { type: '', value: '', condition: '' }];
                 setCurrentEvent(prev => ({ ...prev, actions: newActions }));
-              }} className="mt-2">Add Action</Button>
+              }} className="mt-2">
+                Add Action
+              </Button>
             </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="target" className="text-right">Target</Label>
+            <Label htmlFor="target" className="text-right">
+              Target
+            </Label>
             <div className="col-span-3 flex items-center">
               <Input
                 id="target"
@@ -108,7 +125,9 @@ const EventDialog = ({ currentEvent, setCurrentEvent, addEvent, setEventDialogOp
                 className="flex-grow"
                 placeholder="e.g., /inputs/input-id"
               />
-              <Button onClick={() => setIsSelectingTarget(true)} className="ml-2">Select</Button>
+              <Button onClick={() => setIsSelectingTarget(true)} className="ml-2">
+                Select
+              </Button>
             </div>
           </div>
         </div>

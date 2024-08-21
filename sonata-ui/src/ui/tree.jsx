@@ -15,7 +15,7 @@ Tree.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-export const TreeItem = ({ id, label, children }) => {
+export const TreeItem = ({ id, key, label, children }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const hasChildren = React.Children.count(children) > 0;
@@ -25,7 +25,7 @@ export const TreeItem = ({ id, label, children }) => {
   };
 
   return (
-    <li>
+    <li key={key}>
       <div className="d-flex align-items-center">
         {hasChildren && (
           <button
@@ -47,6 +47,7 @@ export const TreeItem = ({ id, label, children }) => {
 
 TreeItem.propTypes = {
   id: PropTypes.string.isRequired,
+  key: PropTypes.string,
   label: PropTypes.string.isRequired,
   children: PropTypes.node,
 };

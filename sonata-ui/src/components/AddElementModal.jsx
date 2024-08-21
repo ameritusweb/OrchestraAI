@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/ui/dialog.jsx"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs,jsx"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs.jsx"
 import { Button } from "@/ui/button.jsx"
 import { ScrollArea } from "@/ui/scroll-area.jsx"
 import * as LucideIcons from 'lucide-react';

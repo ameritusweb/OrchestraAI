@@ -4,7 +4,10 @@ import PreviewPane from './PreviewPane.jsx';
 import EventDialog from './EventDialog.jsx';
 import { ElementTypes, initialElements } from '../constants.js';
 import { ResizablePanel, ResizablePanelGroup } from "@/ui/resizable.jsx";
-import ElementRenderer from './ElementRenderer.jsx';
+import { breakpoints } from '../constants.js';
+import MainBuilder from './MainBuilder.jsx';
+import TargetSelectorDialog from './TargetSelectorDialog.jsx';
+import { TreeItem } from '@/ui/tree.jsx';
 
 const TailwindBuilder = () => {
   const [containers, setContainers] = useState(initialElements);
@@ -12,9 +15,38 @@ const TailwindBuilder = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [events, setEvents] = useState({});
   const [isSelectingTarget, setIsSelectingTarget] = useState(false);
+  const [classToggles, setClassToggles] = useState({});
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
   const [currentEvent, setCurrentEvent] = useState({ elementId: '', type: '', actions: [], target: '' });
   const [previewInputs, setPreviewInputs] = useState({});
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [previewBreakpoint, setPreviewBreakpoint] = useState(breakpoints[2]);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [computedValues, setComputedValues] = useState({});
+  const [componentDocs, setComponentDocs] = useState({});
+  const [computedValueDialogOpen, setComputedValueDialogOpen] = useState(false);
+
+  const removeComputedValue = (id) => {
+    setComputedValues(prev => {
+      const newComputedValues = { ...prev };
+      delete newComputedValues[id];
+      return newComputedValues;
+    });
+  };
+  
+  const toggleClass = (id, className) => {
+    setClassToggles(prev => ({
+      ...prev,
+      [id]: prev[id] === className ? '' : className,
+    }));
+  };
+
+  const handleInputChange = (inputId, value) => {
+    setPreviewInputs(prev => ({
+      ...prev,
+      [inputId]: value
+    }));
+  };
 
   const addContainer = () => {
     setContainers(prev => [...prev, { type: 'container', classes: [], children: [] }]);
@@ -155,6 +187,14 @@ const TailwindBuilder = () => {
     });
   };
 
+  const removeEvent = (elementId, index) => {
+    setEvents(prev => {
+      const newEvents = { ...prev };
+      newEvents[elementId] = newEvents[elementId].filter((_, i) => i !== index);
+      return newEvents;
+    });
+  };
+
   const toggleReactComponent = (path) => {
     setContainers(prevContainers => {
       const newContainers = JSON.parse(JSON.stringify(prevContainers));
@@ -179,6 +219,19 @@ const TailwindBuilder = () => {
     });
   };
 
+  const generateElementTree = (element, path = '') => {
+    const currentPath = path ? `${path}/${element.id}` : element.id;
+    return (
+      <TreeItem
+        key={currentPath}
+        id={currentPath}
+        label={`${element.type} (${element.id})`}
+      >
+        {element.children && element.children.map(child => generateElementTree(child, currentPath))}
+      </TreeItem>
+    );
+  };
+
   return (
     <ResizablePanelGroup direction="horizontal">
       <ResizablePanel defaultSize={25}>
@@ -190,37 +243,56 @@ const TailwindBuilder = () => {
         />
       </ResizablePanel>
       <ResizablePanel defaultSize={50}>
-        <div className="h-screen p-4 overflow-y-auto">
-          <div className="border-2 border-gray-300 p-4 min-h-[300px]">
-            {containers.map((container, index) => (
-              <ElementRenderer 
-                key={index} 
-                element={container} 
-                path={[index]} 
-                selectedElement={selectedElement} 
-                setSelectedElement={setSelectedElement}
-                addElement={addElement}
-                handleDrop={handleDrop}
-              />
-            ))}
-          </div>
-        </div>
+        <MainBuilder
+          containers={containers}
+          setContainers={setContainers}
+          selectedElement={selectedElement}
+          setSelectedElement={setSelectedElement}
+          handleDrop={handleDrop}
+          toggleReactComponent={toggleReactComponent}
+          toggleStoryComponent={toggleStoryComponent}
+          addElement={addElement}
+          removeClass={removeClass}
+        />
       </ResizablePanel>
       <ResizablePanel defaultSize={25}>
         <PreviewPane 
+          previewBreakpoint={previewBreakpoint}
+          setPreviewBreakpoint={setPreviewBreakpoint}
+          isDarkMode={isDarkMode}
+          setIsDarkMode={setIsDarkMode}
+          previewHtml={previewHtml}
+          previewInputs={previewInputs}
+          handleInputChange={handleInputChange}
+          classToggles={classToggles}
+          toggleClass={toggleClass}
+          computedValues={computedValues}
+          removeComputedValue={removeComputedValue}
           events={events} 
           setEventDialogOpen={setEventDialogOpen}
+          containers={containers}
+          componentDocs={componentDocs}
+          removeEvent={removeEvent}
+          breakpoints={breakpoints}
+          setComputedValueDialogOpen={setComputedValueDialogOpen}
         />
       </ResizablePanel>
       {eventDialogOpen && (
         <EventDialog
+          open={eventDialogOpen}
+          onOpenChange={setEventDialogOpen}
           currentEvent={currentEvent}
           setCurrentEvent={setCurrentEvent}
           addEvent={addEvent}
-          setEventDialogOpen={setEventDialogOpen}
           setIsSelectingTarget={setIsSelectingTarget}
         />
       )}
+      <TargetSelectorDialog
+        open={isSelectingTarget}
+        onOpenChange={setIsSelectingTarget}
+        containers={containers}
+        generateElementTree={generateElementTree}
+      />
     </ResizablePanelGroup>
   );
 };
