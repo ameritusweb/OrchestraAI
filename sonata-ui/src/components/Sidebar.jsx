@@ -104,7 +104,7 @@ const Sidebar = ({
                 <div
                   key={index}
                   draggable
-                  onDragStart={(e) => handleDragStart(e, `group-${index}`)}
+                  onDragStart={(e) => handleDragStart(e, `group:${index}`)}
                   className="bg-blue-200 p-2 mb-2 rounded"
                 >
                   <h4 className="font-semibold">{group.name}</h4>

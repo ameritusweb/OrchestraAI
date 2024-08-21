@@ -1682,3 +1682,316 @@ const openAddElementModal = (path) => {
           </Button>
         </div>
     </div>
+
+> Thank you.
+
+> I also want to be able to drag and drop groups of tailwind classes, not just individual ones.
+> Which will make the interface more user friendly.
+
+> OK. In order to accomplish this we may want to move the accordion to a tab, and have another tab
+> for adding and removing groups.
+> Does that sound good to you?
+
+> Absolutely.
+
+> Great. Let's add a tab component for this:
+
+<Tabs defaultValue="classes">
+            <TabsList>
+              <TabsTrigger value="classes">Classes</TabsTrigger>
+              <TabsTrigger value="groups">Groups</TabsTrigger>
+            </TabsList>
+            <TabsContent value="classes">
+              <Accordion type="multiple">
+                {filteredCategories.map((category, index) => (
+                  <AccordionItem value={`category-${index}`} key={index}>
+                    <AccordionTrigger>{category.name}</AccordionTrigger>
+                    <AccordionContent>
+                      {category.subcategories.map((subcategory, subIndex) => (
+                        <div key={subIndex} className="mb-2">
+                          <h4 className="font-semibold mb-1">{subcategory.name}</h4>
+                          <div className="flex flex-wrap">
+                            {subcategory.classes.map((cls, clsIndex) => (
+                              <div
+                                key={clsIndex}
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, cls)}
+                                className="bg-blue-200 p-1 m-1 text-sm cursor-move rounded"
+                              >
+                                {cls}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </TabsContent>
+            <TabsContent value="groups">
+              <div className="mb-4">
+                <Input
+                  placeholder="Group Name"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  className="mb-2"
+                />
+                <Input
+                  placeholder="Classes (space-separated)"
+                  value={newGroupClasses}
+                  onChange={(e) => setNewGroupClasses(e.target.value)}
+                  className="mb-2"
+                />
+                <Button onClick={addClassGroup}>Add Group</Button>
+              </div>
+              {classGroups.map((group, index) => (
+                <div
+                  key={index}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, `group:${index}`)}
+                  className="bg-blue-200 p-2 mb-2 rounded"
+                >
+                  <h4 className="font-semibold">{group.name}</h4>
+                  <p className="text-sm">{group.classes.join(' ')}</p>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => removeClassGroup(index)}
+                    className="mt-2"
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+            </TabsContent>
+        </Tabs>
+
+> Now we need the following functions to complete the functionality:
+
+const addClassGroup = () => {
+    if (newGroupName && newGroupClasses) {
+      setClassGroups([...classGroups, {
+        name: newGroupName,
+        classes: newGroupClasses.split(' ').filter(Boolean),
+      }]);
+      setNewGroupName('');
+      setNewGroupClasses('');
+    }
+  };
+
+  const removeClassGroup = (index) => {
+    setClassGroups(classGroups.filter((_, i) => i !== index));
+  };
+
+> Add this state to your main component:
+
+const [newGroupName, setNewGroupName] = useState('');
+const [newGroupClasses, setNewGroupClasses] = useState('');
+
+> Now the drop zone needs to handle these groups.
+> Let's update handleDrop for this:
+
+const handleDrop = (e, elementPath) => {
+    e.preventDefault();
+    const data = e.dataTransfer.getData('text');
+    if (data.startsWith('class:')) {
+      // Previous code stays the same
+    }
+    else if (data.startsWith('group')) {
+        const groupIndex = data.split(':')[1];
+        setContainers(prevContainers => {
+        const newContainers = JSON.parse(JSON.stringify(prevContainers));
+        let targetElement = newContainers;
+        for (const index of elementPath) {
+            targetElement = targetElement[index].children;
+        }
+        classGroups[groupIndex].classes.forEach(cls => {
+            if (!targetElement.classes.includes(cls)) {
+            targetElement.classes.push(cls);
+            }
+        });
+        return newContainers;
+        });
+    }
+};
+
+> Thank you.
+
+> Now I want to be able to display a real time preview of the HTML
+
+> In order to do this, we need a function that builds the preview recursively:
+
+  export const generateFullClassName = (cls) => {
+    if (typeof cls === 'string') return cls;
+    const prefixes = cls.prefixes.length > 0 ? cls.prefixes.join(':') + ':' : '';
+    return `${prefixes}${cls.name}`;
+  };
+
+const generatePreviewHtml = () => {
+    let html = '';
+    const generateElementHtml = (element) => {
+      const activeClasses = element.classes
+        .map(generateFullClassName)
+        .join(' ');
+
+      switch (element.type) {
+        case ElementTypes.CONTAINER:
+          return `<div class="${activeClasses}">${element.children.map(generateElementHtml).join('')}</div>`;
+        case ElementTypes.SPAN:
+          return `<span class="${activeClasses}">${element.content}</span>`;
+        case ElementTypes.INPUT:
+          const inputId = `input-${element.id}`;
+          const inputValue = '';
+          return `<input id="${inputId}" class="${activeClasses}" type="text" value="${inputValue}" placeholder="${element.content || 'Input'}" />`;
+        case ElementTypes.BUTTON:
+          return `<button class="${activeClasses}">${element.content || 'Button'}</button>`;
+        case ElementTypes.HEADING:
+          return `<h2 class="${activeClasses}">${element.content || 'Heading'}</h2>`;
+        case ElementTypes.PARAGRAPH:
+          return `<p class="${activeClasses}">${element.content || 'Paragraph text'}</p>`;
+        case ElementTypes.SELECT:
+          const selectId = `select-${element.id}`;
+          const selectValue = '';
+          return `
+            <select id="${selectId}" class="${activeClasses}">
+              ${(element.options || []).map((option) =>
+                `<option value="${option}" ${selectValue === option ? 'selected' : ''}>${option}</option>`
+              ).join('')}
+            </select>
+          `;
+        case ElementTypes.CHECKBOX:
+          const checkboxId = `checkbox-${element.id}`;
+          const isChecked = false;
+          return `
+            <div class="flex items-center">
+              <input type="checkbox" id="${checkboxId}" class="${activeClasses}" ${isChecked ? 'checked' : ''} />
+              <label for="${checkboxId}" class="ml-2">${element.content || 'Checkbox'}</label>
+            </div>
+          `;
+        case ElementTypes.RADIO:
+          const radioName = `radio-${element.id}`;
+          return `
+            <div class="${activeClasses}">
+              ${(element.options || []).map((option, index) => {
+                const radioId = `${radioName}-${index}`;
+                const isChecked = false;
+                return `
+                  <div class="flex items-center mb-2">
+                    <input type="radio" id="${radioId}" name="${radioName}" value="${option}" class="${activeClasses}" ${isChecked ? 'checked' : ''} />
+                    <label for="${radioId}" class="ml-2">${option}</label>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
+        case ElementTypes.SLIDER:
+          const sliderId = `slider-${element.id}`;
+          const sliderValue = element.min || 0;
+          return `
+            <div class="${activeClasses}">
+              <input type="range" id="${sliderId}" min="${element.min || 0}" max="${element.max || 100}" value="${sliderValue}" class="w-full" />
+              <p>Value: ${sliderValue}</p>
+            </div>
+          `;
+        default:
+          return '';
+      }
+    };
+
+    html = containers.map(generateElementHtml).join('');
+    setPreviewHtml(html);
+  };
+
+  useEffect(() => {
+    generatePreviewHtml();
+  }, [containers]);
+
+> Then we need a useEffect to set the preview HTML
+
+useEffect(() => {
+    generatePreviewHtml();
+  }, [containers]);
+
+> Add this state to your main component:
+
+const [previewHtml, setPreviewHtml] = useState('');
+
+> Then display the preview HTML in the UI:
+
+<div 
+        className={`border rounded p-4 bg-white`}`}
+        style={{ width: `100%`, maxWidth: '100%', margin: '0 auto' }}
+      >
+        <h4 className="text-md font-semibold mb-2">Live Preview</h4>
+        <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+      </div>
+
+> Thank you.
+
+> Now, I want to be able to toggle classes that I have added on and off, and have the real time preview update automatically.
+
+> Certainly. Here is a UI component to toggle classes:
+
+import React from 'react';
+import { Switch } from "@/ui/switch.jsx"
+import { Label } from "@/ui/label.jsx"
+
+const ClassesTab = ({ classToggles, toggleClass }) => {
+  return (
+    <div className="mb-6">
+      <h4 className="text-md font-semibold mb-2">Utility Classes</h4>
+      {Object.entries(classToggles).map(([classKey, isActive]) => {
+        const [elementId, className] = classKey.split('-');
+        return (
+          <div key={classKey} className="flex items-center justify-between mb-2">
+            <Label htmlFor={classKey} className="flex-grow">{className}</Label>
+            <Switch
+              id={classKey}
+              checked={isActive}
+              onCheckedChange={() => toggleClass(elementId, className)}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+export default ClassesTab;
+
+> Here are the functions for this:
+
+const toggleClass = (id, className) => {
+    setClassToggles(prev => ({
+      ...prev,
+      [id]: prev[id] === className ? '' : className,
+    }));
+  };
+
+> Here is the state to add to your main component
+
+const [classToggles, setClassToggles] = useState({});
+
+> Now, we need to update the HTML generation code:
+
+const generatePreviewHtml = () => {
+    let html = '';
+    const generateElementHtml = (element) => {
+      const activeClasses = element.classes
+        .filter((cls) => {
+          const classKey = `${element.id}-${typeof cls === 'object' ? cls.name : cls}`;
+          return classToggles[classKey] !== false;
+        }) // <-------- Adds this filter
+        .map(generateFullClassName)
+        .join(' ');
+
+        // The rest stays the same
+
+> And, update the useEffect:
+
+useEffect(() => {
+    generatePreviewHtml();
+  }, [containers, classToggles]);
+
+> Thank you.
