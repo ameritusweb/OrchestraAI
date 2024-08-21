@@ -279,6 +279,29 @@ const TailwindBuilder = () => {
         }
         return newContainers;
       });
+    } else if (data.startsWith('group:')) {
+        // Handle class groups
+        const groupIndex = parseInt(data.split(':')[1], 10);
+        setContainers((prevContainers) => {
+          const newContainers = JSON.parse(JSON.stringify(prevContainers));
+          let targetElement = newContainers;
+          for (const index of elementPath) {
+            targetElement = targetElement[index].children;
+          }
+    
+          classGroups[groupIndex].classes.forEach((cls) => {
+            if (!targetElement.classes.includes(cls)) {
+              targetElement.classes.push(cls);
+    
+              // Update classToggles for each class in the group
+              setClassToggles((prev) => ({
+                ...prev,
+                [`${targetElement.id}-${cls}`]: true,
+              }));
+            }
+          });
+          return newContainers;
+        });
     } else if (data.startsWith('state:')) {
       const stateName = data.split(':')[1];
       setContainers(prevContainers => {
