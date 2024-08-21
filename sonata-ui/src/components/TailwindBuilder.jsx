@@ -208,16 +208,8 @@ const TailwindBuilder = () => {
       </ResizablePanel>
       <ResizablePanel defaultSize={25}>
         <PreviewPane 
-          containers={containers} 
           events={events} 
-          setEvents={setEvents} 
-          currentEvent={currentEvent} 
-          setCurrentEvent={setCurrentEvent} 
-          eventDialogOpen={eventDialogOpen} 
           setEventDialogOpen={setEventDialogOpen}
-          isSelectingTarget={isSelectingTarget}
-          setIsSelectingTarget={setIsSelectingTarget}
-          addEvent={addEvent}
         />
       </ResizablePanel>
       {eventDialogOpen && (
