@@ -8,6 +8,7 @@ import ComputedTab from './ComputedTab.jsx';
 import EventsTab from './EventsTab.jsx';
 import InputsTab from './InputsTab.jsx';
 import StorybookTab from './StorybookTab.jsx';
+import ReactExportTab from './ReactExportTab.jsx';
 
 const PreviewPane = ({
   previewBreakpoint,
@@ -82,6 +83,9 @@ const PreviewPane = ({
         </TabsContent>
         <TabsContent value="storybook">
           <StorybookTab containers={containers} computedValues={computedValues} events={events} componentDocs={componentDocs} />
+        </TabsContent>
+        <TabsContent value="react-export">
+          <ReactExportTab containers={containers} computedValues={computedValues} events={events} previewInputs={previewInputs} />
         </TabsContent>
       </Tabs>
       <div 

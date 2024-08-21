@@ -1,35 +1,43 @@
 import React, { useState } from 'react';
 import { Button } from "@/ui/button.jsx"
-import { Plus, Box, Type, Input as InputIcon, SquareAsterisk, Heading1, Heading2, List, Image, Link } from 'lucide-react';
+import { Plus, Search, Box, Type, Input as InputIcon, X, SquareAsterisk, Heading1, Heading2, List, Image, Link, Moon, Sun, Smartphone, Tablet, Monitor, BookOpen, Tag, CheckSquare, ToggleLeft, ChevronDown, Sliders } from 'lucide-react';
 import AddElementModal from './AddElementModal.jsx';
 
 const ElementTypes = {
-    CONTAINER: 'container',
-    SPAN: 'span',
-    INPUT: 'input',
-    BUTTON: 'button',
-    HEADING: 'heading',
-    PARAGRAPH: 'paragraph',
-    UNORDERED_LIST: 'ul',
-    ORDERED_LIST: 'ol',
-    LIST_ITEM: 'li',
-    IMAGE: 'img',
-    LINK: 'a'
-  };
+  CONTAINER: 'container',
+  SPAN: 'span',
+  INPUT: 'input',
+  BUTTON: 'button',
+  HEADING: 'heading',
+  PARAGRAPH: 'paragraph',
+  UNORDERED_LIST: 'ul',
+  ORDERED_LIST: 'ol',
+  LIST_ITEM: 'li',
+  IMAGE: 'img',
+  LINK: 'a',
+  SELECT: 'select',
+  CHECKBOX: 'checkbox',
+  RADIO: 'radio',
+  SLIDER: 'slider',
+};
   
-  const ElementIcons = {
-    [ElementTypes.CONTAINER]: Box,
-    [ElementTypes.SPAN]: Type,
-    [ElementTypes.INPUT]: InputIcon,
-    [ElementTypes.BUTTON]: SquareAsterisk,
-    [ElementTypes.HEADING]: Heading1,
-    [ElementTypes.PARAGRAPH]: Heading2,
-    [ElementTypes.UNORDERED_LIST]: List,
-    [ElementTypes.ORDERED_LIST]: List,
-    [ElementTypes.LIST_ITEM]: Type,
-    [ElementTypes.IMAGE]: Image,
-    [ElementTypes.LINK]: Link
-  };
+const ElementIcons = {
+  [ElementTypes.CONTAINER]: Box,
+  [ElementTypes.SPAN]: Type,
+  [ElementTypes.INPUT]: InputIcon,
+  [ElementTypes.BUTTON]: SquareAsterisk,
+  [ElementTypes.HEADING]: Heading1,
+  [ElementTypes.PARAGRAPH]: Heading2,
+  [ElementTypes.UNORDERED_LIST]: List,
+  [ElementTypes.ORDERED_LIST]: List,
+  [ElementTypes.LIST_ITEM]: Type,
+  [ElementTypes.IMAGE]: Image,
+  [ElementTypes.LINK]: Link,
+  [ElementTypes.SELECT]: ChevronDown,
+  [ElementTypes.CHECKBOX]: CheckSquare,
+  [ElementTypes.RADIO]: ToggleLeft,
+  [ElementTypes.SLIDER]: Sliders,
+};
 
 const MainBuilder = ({ 
   containers, 

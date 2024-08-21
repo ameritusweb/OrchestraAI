@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar.jsx';
 import PreviewPane from './PreviewPane.jsx';
 import EventDialog from './EventDialog.jsx';
@@ -8,6 +8,8 @@ import { breakpoints } from '../constants.js';
 import MainBuilder from './MainBuilder.jsx';
 import TargetSelectorDialog from './TargetSelectorDialog.jsx';
 import { TreeItem } from '@/ui/tree.jsx';
+import ComputedValueDialog from './ComputedValueDialog.jsx';
+import { generateFullClassName } from '../utils.js';
 
 const TailwindBuilder = () => {
   const [containers, setContainers] = useState(initialElements);
@@ -25,6 +27,7 @@ const TailwindBuilder = () => {
   const [computedValues, setComputedValues] = useState({});
   const [componentDocs, setComponentDocs] = useState({});
   const [computedValueDialogOpen, setComputedValueDialogOpen] = useState(false);
+  const [currentComputedValue, setCurrentComputedValue] = useState({ id: '', name: '', formula: '' });
 
   const removeComputedValue = (id) => {
     setComputedValues(prev => {
@@ -54,18 +57,29 @@ const TailwindBuilder = () => {
 
   const getDefaultContent = (type) => {
     switch (type) {
-      case ElementTypes.BUTTON: return 'Button';
-      case ElementTypes.HEADING: return 'Heading';
-      case ElementTypes.PARAGRAPH: return 'Paragraph text';
-      case ElementTypes.SPAN: return 'Span text';
-      case ElementTypes.LIST_ITEM: return 'List item';
-      case ElementTypes.LINK: return 'Link text';
-      case ElementTypes.IMAGE: return { src: '/api/placeholder/200/200', alt: 'Placeholder image' };
-      case ElementTypes.SELECT: return 'Select an option';
-      case ElementTypes.CHECKBOX: return 'Checkbox';
-      case ElementTypes.RADIO: return 'Radio Group';
-      case ElementTypes.SLIDER: return 'Slider';
-      default: return '';
+      case ElementTypes.BUTTON:
+        return 'Button';
+      case ElementTypes.HEADING:
+        return 'Heading';
+      case ElementTypes.PARAGRAPH:
+        return 'Paragraph text';
+      case ElementTypes.SPAN:
+        return 'Span text';
+      case ElementTypes.LIST_ITEM:
+        return 'List item';
+      case ElementTypes.LINK:
+        return 'Link text';
+      case ElementTypes.IMAGE:
+        return { src: '/api/placeholder/200/200', alt: 'Placeholder image' };
+      case ElementTypes.SELECT:
+        return ['Option 1', 'Option 2', 'Option 3'];
+      case ElementTypes.CHECKBOX:
+      case ElementTypes.RADIO:
+        return ['Option 1', 'Option 2'];
+      case ElementTypes.SLIDER:
+        return { min: 0, max: 100, step: 1 };
+      default:
+        return '';
     }
   };
 
@@ -141,6 +155,89 @@ const TailwindBuilder = () => {
       }
     });
   };
+
+  const generatePreviewHtml = () => {
+    let html = '';
+    const generateElementHtml = (element) => {
+      const activeClasses = element.classes
+        .filter((cls) => {
+          const classKey = `${element.id}-${typeof cls === 'object' ? cls.name : cls}`;
+          return classToggles[classKey] !== false;
+        })
+        .map(generateFullClassName)
+        .join(' ');
+
+      switch (element.type) {
+        case ElementTypes.CONTAINER:
+          return `<div class="${activeClasses}">${element.children.map(generateElementHtml).join('')}</div>`;
+        case ElementTypes.SPAN:
+          return `<span class="${activeClasses}">${element.content}</span>`;
+        case ElementTypes.INPUT:
+          const inputId = `input-${element.id}`;
+          const inputValue = previewInputs[inputId] || '';
+          return `<input id="${inputId}" class="${activeClasses}" type="text" value="${inputValue}" placeholder="${element.content || 'Input'}" />`;
+        case ElementTypes.BUTTON:
+          return `<button class="${activeClasses}">${element.content || 'Button'}</button>`;
+        case ElementTypes.HEADING:
+          return `<h2 class="${activeClasses}">${element.content || 'Heading'}</h2>`;
+        case ElementTypes.PARAGRAPH:
+          return `<p class="${activeClasses}">${element.content || 'Paragraph text'}</p>`;
+        case ElementTypes.SELECT:
+          const selectId = `select-${element.id}`;
+          const selectValue = previewInputs[selectId] || '';
+          return `
+            <select id="${selectId}" class="${activeClasses}">
+              ${(element.options || []).map((option) =>
+                `<option value="${option}" ${selectValue === option ? 'selected' : ''}>${option}</option>`
+              ).join('')}
+            </select>
+          `;
+        case ElementTypes.CHECKBOX:
+          const checkboxId = `checkbox-${element.id}`;
+          const isChecked = previewInputs[checkboxId] || false;
+          return `
+            <div class="flex items-center">
+              <input type="checkbox" id="${checkboxId}" class="${activeClasses}" ${isChecked ? 'checked' : ''} />
+              <label for="${checkboxId}" class="ml-2">${element.content || 'Checkbox'}</label>
+            </div>
+          `;
+        case ElementTypes.RADIO:
+          const radioName = `radio-${element.id}`;
+          return `
+            <div class="${activeClasses}">
+              ${(element.options || []).map((option, index) => {
+                const radioId = `${radioName}-${index}`;
+                const isChecked = previewInputs[radioName] === option;
+                return `
+                  <div class="flex items-center mb-2">
+                    <input type="radio" id="${radioId}" name="${radioName}" value="${option}" class="${activeClasses}" ${isChecked ? 'checked' : ''} />
+                    <label for="${radioId}" class="ml-2">${option}</label>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
+        case ElementTypes.SLIDER:
+          const sliderId = `slider-${element.id}`;
+          const sliderValue = previewInputs[sliderId] || element.min || 0;
+          return `
+            <div class="${activeClasses}">
+              <input type="range" id="${sliderId}" min="${element.min || 0}" max="${element.max || 100}" value="${sliderValue}" class="w-full" />
+              <p>Value: ${sliderValue}</p>
+            </div>
+          `;
+        default:
+          return '';
+      }
+    };
+
+    html = containers.map(generateElementHtml).join('');
+    setPreviewHtml(html);
+  };
+
+  useEffect(() => {
+    generatePreviewHtml();
+  }, [containers, previewInputs, isDarkMode, classToggles]);
 
   const handleDragStart = (e, className) => {
     e.dataTransfer.setData('text/plain', className);
@@ -287,12 +384,22 @@ const TailwindBuilder = () => {
           setIsSelectingTarget={setIsSelectingTarget}
         />
       )}
-      <TargetSelectorDialog
-        open={isSelectingTarget}
-        onOpenChange={setIsSelectingTarget}
-        containers={containers}
-        generateElementTree={generateElementTree}
-      />
+      {isSelectingTarget && (
+        <TargetSelectorDialog
+          open={isSelectingTarget}
+          onOpenChange={setIsSelectingTarget}
+          containers={containers}
+          generateElementTree={generateElementTree}
+        />
+      )}
+      {computedValueDialogOpen && (
+        <ComputedValueDialog
+          computedValueDialogOpen={computedValueDialogOpen}
+          setComputedValueDialogOpen={setComputedValueDialogOpen}
+          setCurrentComputedValue={setCurrentComputedValue}
+          currentComputedValue={currentComputedValue}
+        />
+      )}
     </ResizablePanelGroup>
   );
 };
