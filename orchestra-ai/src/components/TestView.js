@@ -3,6 +3,147 @@
 import 'bootstrap';
 import { useSharedContext } from '../hooks/useSharedContext';
 
+const AssertTypes = {
+  EQUALITY: 'equality',
+  TYPE: 'type',
+  RANGE: 'range',
+  CUSTOM: 'custom'
+};
+
+const CustomAssertBuilderWithMessages = ({ onSave, onCancel }) => {
+  const [assertName, setAssertName] = useState('');
+  const [assertType, setAssertType] = useState(AssertTypes.EQUALITY);
+  const [params, setParams] = useState({ actual: '', expected: '' });
+  const [customCode, setCustomCode] = useState('');
+  const [customMessage, setCustomMessage] = useState('');
+
+  const generateAssertCode = () => {
+    const messageParam = ', message';
+    const messageUse = customMessage ? `message || '${customMessage}'` : 'message';
+
+    switch (assertType) {
+      case AssertTypes.EQUALITY:
+        return `
+          ${assertName}: (actual, expected${messageParam}) => {
+            if (actual !== expected) {
+              throw new Error(${messageUse} || \`Expected \${actual} to equal \${expected}\`);
+            }
+          }
+        `;
+      case AssertTypes.TYPE:
+        return `
+          ${assertName}: (value, type${messageParam}) => {
+            if (typeof value !== type) {
+              throw new Error(${messageUse} || \`Expected \${value} to be of type \${type}, but got \${typeof value}\`);
+            }
+          }
+        `;
+      case AssertTypes.RANGE:
+        return `
+          ${assertName}: (value, min, max${messageParam}) => {
+            if (value < min || value > max) {
+              throw new Error(${messageUse} || \`Expected \${value} to be between \${min} and \${max}\`);
+            }
+          }
+        `;
+      case AssertTypes.CUSTOM:
+        return customCode;
+      default:
+        return '';
+    }
+  };
+
+  const handleSave = () => {
+    onSave({
+      name: assertName,
+      type: assertType,
+      code: generateAssertCode(),
+      customMessage
+    });
+  };
+
+  return (
+    <div className="custom-assert-builder">
+      <h3>Custom Assert Builder</h3>
+      <div className="mb-3">
+        <label htmlFor="assertName" className="form-label">Assert Name</label>
+        <input
+          type="text"
+          className="form-control"
+          id="assertName"
+          value={assertName}
+          onChange={(e) => setAssertName(e.target['value'])}
+        />
+      </div>
+      <div className="mb-3">
+        <label htmlFor="assertType" className="form-label">Assert Type</label>
+        <select
+          className="form-select"
+          id="assertType"
+          value={assertType}
+          onChange={(e) => setAssertType(e.target['value'])}
+        >
+          <option value={AssertTypes.EQUALITY}>Equality</option>
+          <option value={AssertTypes.TYPE}>Type Check</option>
+          <option value={AssertTypes.RANGE}>Range Check</option>
+          <option value={AssertTypes.CUSTOM}>Custom</option>
+        </select>
+      </div>
+      {assertType === AssertTypes.CUSTOM ? (
+        <div className="mb-3">
+          <label htmlFor="customCode" className="form-label">Custom Assert Code</label>
+          <textarea
+            className="form-control"
+            id="customCode"
+            rows={5}
+            value={customCode}
+            onChange={(e) => setCustomCode(e.target['value'])}
+          ></textarea>
+        </div>
+      ) : (
+        <div className="mb-3">
+          <label className="form-label">Parameters</label>
+          <input
+            type="text"
+            className="form-control mb-2"
+            placeholder="Actual"
+            value={params.actual}
+            onChange={(e) => setParams({...params, actual: e.target['value']})}
+          />
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Expected"
+            value={params.expected}
+            onChange={(e) => setParams({...params, expected: e.target['value']})}
+          />
+        </div>
+      )}
+      <div className="mb-3">
+        <label htmlFor="customMessage" className="form-label">Custom Error Message (optional)</label>
+        <input
+          type="text"
+          className="form-control"
+          id="customMessage"
+          value={customMessage}
+          onChange={(e) => setCustomMessage(e.target['value'])}
+          placeholder="Enter a custom error message"
+        />
+      </div>
+      <div className="mb-3">
+        <label className="form-label">Preview</label>
+        <pre className="border p-2 bg-light">
+          {generateAssertCode()}
+        </pre>
+      </div>
+      <div className="mb-3">
+        <button className="btn btn-primary me-2" onClick={handleSave}>Save Assert</button>
+        <button className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+      </div>
+    </div>
+  );
+};
+
 const TestView = () => {
   
   const [testState, updateTestState, vscode] = useSharedContext('testView');
