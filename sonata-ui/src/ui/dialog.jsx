@@ -79,13 +79,14 @@ export const AlertDialog = ({ open, onOpenChange, children }) => {
   };
 
 // Shared content components
-export const DialogContent = ({ children }) => (
-  <div className="modal-content">
+export const DialogContent = ({ children, className }) => (
+  <div className={`modal-content ${className}`}>
     {children}
   </div>
 );
 DialogContent.propTypes = {
   children: PropTypes.node.isRequired,
+  className: PropTypes.string,
 };
 
 export const AlertDialogContent = ({ children }) => (

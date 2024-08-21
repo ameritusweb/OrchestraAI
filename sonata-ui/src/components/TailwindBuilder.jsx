@@ -9,11 +9,16 @@ import ElementRenderer from './ElementRenderer.jsx';
 const TailwindBuilder = () => {
   const [containers, setContainers] = useState(initialElements);
   const [selectedElement, setSelectedElement] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [events, setEvents] = useState({});
   const [isSelectingTarget, setIsSelectingTarget] = useState(false);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
   const [currentEvent, setCurrentEvent] = useState({ elementId: '', type: '', actions: [], target: '' });
   const [previewInputs, setPreviewInputs] = useState({});
+
+  const addContainer = () => {
+    setContainers(prev => [...prev, { type: 'container', classes: [], children: [] }]);
+  };
 
   const getDefaultContent = (type) => {
     switch (type) {
@@ -51,6 +56,19 @@ const TailwindBuilder = () => {
     });
   };
 
+  const removeClass = (path, classToRemove) => {
+    setContainers(prevContainers => {
+      const newContainers = JSON.parse(JSON.stringify(prevContainers));
+      let targetElement = newContainers;
+      for (const index of path) {
+        targetElement = targetElement[index].children;
+      }
+      targetElement.classes = targetElement.classes.filter(cls => 
+        cls !== classToRemove && (typeof cls !== 'object' || cls.name !== classToRemove)
+      );
+      return newContainers;
+    });
+  };
 
   const handleEvent = (elementId, eventType) => {
     const elementEvents = events[elementId] || [];
@@ -137,12 +155,38 @@ const TailwindBuilder = () => {
     });
   };
 
+  const toggleReactComponent = (path) => {
+    setContainers(prevContainers => {
+      const newContainers = JSON.parse(JSON.stringify(prevContainers));
+      let targetElement = newContainers;
+      for (const index of path) {
+        targetElement = targetElement[index].children;
+      }
+      targetElement.isReactComponent = !targetElement.isReactComponent;
+      return newContainers;
+    });
+  };
+
+  const toggleStoryComponent = (path) => {
+    setContainers(prevContainers => {
+      const newContainers = JSON.parse(JSON.stringify(prevContainers));
+      let targetElement = newContainers;
+      for (const index of path) {
+        targetElement = targetElement[index].children;
+      }
+      targetElement.isStoryComponent = !targetElement.isStoryComponent;
+      return newContainers;
+    });
+  };
+
   return (
     <ResizablePanelGroup direction="horizontal">
       <ResizablePanel defaultSize={25}>
-        <Sidebar 
+      <Sidebar
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
           handleDragStart={handleDragStart}
-          addElement={addElement} 
+          addContainer={addContainer}
         />
       </ResizablePanel>
       <ResizablePanel defaultSize={50}>
