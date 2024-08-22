@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/ui/dialog.jsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs.jsx";
 import { Button } from "@/ui/button.jsx";
@@ -30,6 +30,8 @@ const ICONS_PER_PAGE = 12;
 const AddElementModal = ({ isOpen, onClose, onAddElement }) => {
   const [selectedTab, setSelectedTab] = useState('container');
   const [currentPage, setCurrentPage] = useState(1);
+  const [pagingSpeed, setPagingSpeed] = useState(500); // Start with 500ms delay
+  const [isPaging, setIsPaging] = useState(false); // To track if button is pressed
 
   const totalIcons = Object.keys(icons).length;
   const totalPages = Math.ceil(totalIcons / ICONS_PER_PAGE);
@@ -39,14 +41,43 @@ const AddElementModal = ({ isOpen, onClose, onAddElement }) => {
     onClose();
   };
 
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
-  };
-
   const paginatedIcons = useMemo(() => {
     const startIndex = (currentPage - 1) * ICONS_PER_PAGE;
     return Object.keys(icons).slice(startIndex, startIndex + ICONS_PER_PAGE);
   }, [currentPage]);
+
+  const handleTabChange = (tab) => {
+    setSelectedTab(tab);
+    setCurrentPage(1); // Reset to first page when tab changes
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage((prevPage) => prevPage + 1);
+    }
+  };
+
+  const handlePagingStart = () => {
+    setIsPaging(true);
+    setPagingSpeed(500); // Reset speed
+  };
+
+  const handlePagingStop = () => {
+    setIsPaging(false);
+  };
+
+  useEffect(() => {
+    let interval;
+    if (isPaging) {
+      interval = setInterval(() => {
+        handleNextPage();
+        setPagingSpeed((prevSpeed) => Math.max(50, prevSpeed * 0.9)); // Increase speed up to a minimum delay of 50ms
+      }, pagingSpeed);
+    } else if (interval) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isPaging, pagingSpeed]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose} className="tw-h-full">
@@ -54,7 +85,7 @@ const AddElementModal = ({ isOpen, onClose, onAddElement }) => {
         <DialogHeader>
           <DialogTitle>Add Element</DialogTitle>
         </DialogHeader>
-        <Tabs defaultValue='container' onValueChange={setSelectedTab}>
+        <Tabs defaultValue='container' onValueChange={handleTabChange}>
           <TabsList className="tw-grid tw-w-full tw-grid-cols-4">
             <TabsTrigger value="container">Container</TabsTrigger>
             <TabsTrigger value="input">Input</TabsTrigger>
@@ -110,14 +141,16 @@ const AddElementModal = ({ isOpen, onClose, onAddElement }) => {
             </ScrollArea>
             <div className="tw-flex tw-justify-between tw-mt-4">
               <Button
-                onClick={() => handlePageChange(currentPage - 1)}
+                onClick={() => setCurrentPage(currentPage - 1)}
                 disabled={currentPage === 1}
               >
                 Previous
               </Button>
               <span>{`Page ${currentPage} of ${totalPages}`}</span>
               <Button
-                onClick={() => handlePageChange(currentPage + 1)}
+                onMouseDown={handlePagingStart}
+                onMouseUp={handlePagingStop}
+                onMouseLeave={handlePagingStop}
                 disabled={currentPage === totalPages}
               >
                 Next

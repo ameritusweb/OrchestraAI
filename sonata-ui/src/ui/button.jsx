@@ -8,6 +8,9 @@ import PropTypes from 'prop-types';
  * @property {'outline' | 'solid' | 'destructive'} [variant] - The variant of the button.
  * @property {string} [className] - Additional CSS classes to apply to the button.
  * @property {React.MouseEventHandler<HTMLButtonElement>} [onClick] - Callback function to handle button clicks.
+ * @property {React.MouseEventHandler<HTMLButtonElement>} [onMouseDown] - Callback function to handle mouse down events.
+ * @property {React.MouseEventHandler<HTMLButtonElement>} [onMouseUp] - Callback function to handle mouse up events.
+ * @property {React.MouseEventHandler<HTMLButtonElement>} [onMouseLeave] - Callback function to handle mouse leave events.
  * @property {React.Ref<HTMLButtonElement>} [ref] - Ref for the button element.
  * @property {boolean} [disabled] - If true, disables the button.
  */
@@ -17,7 +20,21 @@ import PropTypes from 'prop-types';
  * @type {React.ForwardRefExoticComponent<Omit<ButtonProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>}
  */
 export const Button = React.forwardRef(
-  ({ children, size = 'md', variant = 'solid', className, onClick, disabled, ...props }, ref) => {
+  (
+    { 
+      children, 
+      size = 'md', 
+      variant = 'solid', 
+      className, 
+      onClick, 
+      onMouseDown, 
+      onMouseUp, 
+      onMouseLeave, 
+      disabled, 
+      ...props 
+    }, 
+    ref
+  ) => {
     const sizeClass = size === 'sm' ? 'btn-sm' : '';
     let variantClass = '';
 
@@ -38,6 +55,9 @@ export const Button = React.forwardRef(
         ref={ref}
         className={`btn ${sizeClass} ${variantClass} ${className || ''}`}
         onClick={onClick}
+        onMouseDown={onMouseDown}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
         disabled={disabled}
         {...props}
       >
@@ -55,5 +75,8 @@ Button.propTypes = {
   variant: PropTypes.oneOf(['outline', 'solid', 'destructive']),
   className: PropTypes.string,
   onClick: PropTypes.func,
-  disabled: PropTypes.bool, // Add the disabled prop type
+  onMouseDown: PropTypes.func,
+  onMouseUp: PropTypes.func,
+  onMouseLeave: PropTypes.func,
+  disabled: PropTypes.bool,
 };
