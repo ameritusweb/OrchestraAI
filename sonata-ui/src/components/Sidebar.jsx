@@ -38,40 +38,40 @@ const Sidebar = ({
   })).filter(category => category.subcategories.length > 0);
 
   return (
-    <div className="h-screen bg-gray-100 p-4 overflow-y-auto">
-      <Button onClick={addContainer} className="mb-4">
+    <div className="tw-h-screen tw-p-4 tw-overflow-y-auto">
+      <Button onClick={addContainer} className="tw-mb-4">
         Add Container
       </Button>
-      <div className="mb-4 relative">
+      <div className="tw-mb-4 tw-relative">
         <Input
           placeholder="Search classes..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pr-8"
+          className="tw-pr-8"
         />
-        <Search className="absolute right-2 top-2 text-gray-400" size={20} />
+        <Search className="tw-absolute tw-right-2 tw-top-2 tw-text-gray-400" size={20} />
       </div>
       <Tabs defaultValue="classes">
             <TabsList>
-              <TabsTrigger value="classes">Classes</TabsTrigger>
+              <TabsTrigger value="utilityClasses">Classes</TabsTrigger>
               <TabsTrigger value="groups">Groups</TabsTrigger>
             </TabsList>
-            <TabsContent value="classes">
+            <TabsContent value="utilityClasses">
               <Accordion type="multiple">
                 {filteredCategories.map((category, index) => (
                   <AccordionItem value={`category-${index}`} key={`${index}`}>
                     <AccordionTrigger>{category.name}</AccordionTrigger>
                     <AccordionContent>
                       {category.subcategories.map((subcategory, subIndex) => (
-                        <div key={subIndex} className="mb-2">
-                          <h4 className="font-semibold mb-1">{subcategory.name}</h4>
-                          <div className="flex flex-wrap">
+                        <div key={subIndex} className="tw-mb-2">
+                          <h4 className="tw-font-semibold tw-mb-1">{subcategory.name}</h4>
+                          <div className="tw-flex tw-flex-wrap">
                             {subcategory.classes.map((cls, clsIndex) => (
                               <div
                                 key={clsIndex}
                                 draggable
                                 onDragStart={(e) => handleDragStart(e, cls)}
-                                className="bg-blue-200 p-1 m-1 text-sm cursor-move rounded"
+                                className="tw-bg-blue-200 tw-p-1 tw-m-1 tw-text-sm tw-cursor-move tw-rounded"
                               >
                                 {cls}
                               </div>
@@ -85,18 +85,18 @@ const Sidebar = ({
               </Accordion>
             </TabsContent>
             <TabsContent value="groups">
-              <div className="mb-4">
+              <div className="tw-mb-4">
                 <Input
                   placeholder="Group Name"
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
-                  className="mb-2"
+                  className="tw-mb-2"
                 />
                 <Input
                   placeholder="Classes (space-separated)"
                   value={newGroupClasses}
                   onChange={(e) => setNewGroupClasses(e.target.value)}
-                  className="mb-2"
+                  className="tw-mb-2"
                 />
                 <Button onClick={addClassGroup}>Add Group</Button>
               </div>
@@ -105,15 +105,15 @@ const Sidebar = ({
                   key={index}
                   draggable
                   onDragStart={(e) => handleDragStart(e, `group:${index}`)}
-                  className="bg-blue-200 p-2 mb-2 rounded"
+                  className="tw-bg-blue-200 tw-p-2 tw-mb-2 tw-rounded"
                 >
-                  <h4 className="font-semibold">{group.name}</h4>
-                  <p className="text-sm">{group.classes.join(' ')}</p>
+                  <h4 className="tw-font-semibold">{group.name}</h4>
+                  <p className="tw-text-sm">{group.classes.join(' ')}</p>
                   <Button
                     size="sm"
                     variant="destructive"
                     onClick={() => removeClassGroup(index)}
-                    className="mt-2"
+                    className="tw-mt-2"
                   >
                     Remove
                   </Button>
@@ -121,12 +121,12 @@ const Sidebar = ({
               ))}
             </TabsContent>
             <TabsContent value="states">
-              <div className="mb-4">
+              <div className="tw-mb-4">
                 <Input
                   placeholder="New State Name"
                   value={newStateName}
                   onChange={(e) => setNewStateName(e.target.value)}
-                  className="mb-2"
+                  className="tw-mb-2"
                 />
                 <Button onClick={addStorybookState}>Add State</Button>
               </div>
@@ -135,7 +135,7 @@ const Sidebar = ({
                   key={index}
                   draggable
                   onDragStart={(e) => e.dataTransfer.setData('text', `state:${state}`)}
-                  className="bg-green-200 p-2 mb-2 rounded flex justify-between items-center"
+                  className="tw-bg-green-200 tw-p-2 tw-mb-2 tw-rounded tw-flex tw-justify-between tw-items-center"
                 >
                   <span>{state}</span>
                   <Button
@@ -149,12 +149,12 @@ const Sidebar = ({
               ))}
             </TabsContent>
             <TabsContent value="prefixes">
-              <div className="mb-4">
+              <div className="tw-mb-4">
                 <Input
                   placeholder="Search prefixes..."
                   value={prefixSearch}
                   onChange={(e) => setPrefixSearch(e.target.value)}
-                  className="mb-2"
+                  className="tw-mb-2"
                 />
               </div>
               {TailwindPrefixes.filter(prefix => 
@@ -165,10 +165,10 @@ const Sidebar = ({
                   key={index}
                   draggable
                   onDragStart={(e) => e.dataTransfer.setData('text', `prefix:${prefix.name}`)}
-                  className="bg-purple-200 p-2 mb-2 rounded flex justify-between items-center"
+                  className="tw-bg-purple-200 tw-p-2 tw-mb-2 tw-rounded tw-flex tw-justify-between tw-items-center"
                 >
-                  <span className="font-semibold">{prefix.name}</span>
-                  <span className="text-sm text-gray-600">{prefix.description}</span>
+                  <span className="tw-font-semibold">{prefix.name}</span>
+                  <span className="tw-text-sm tw-text-gray-600">{prefix.description}</span>
                 </div>
               ))}
             </TabsContent>

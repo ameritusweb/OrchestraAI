@@ -31,9 +31,9 @@ const PreviewPane = ({
   componentDocs,
 }) => {
   return (
-    <div className="h-screen p-4 overflow-y-auto">
-      <h3 className="text-lg font-semibold mb-4">Preview</h3>
-      <div className="mb-4 flex items-center justify-between">
+    <div className="tw-h-screen tw-p-4 tw-overflow-y-auto">
+      <h3 className="tw-text-lg tw-font-semibold tw-mb-4">Preview</h3>
+      <div className="tw-mb-4 tw-flex tw-items-center tw-justify-between">
         <Select
           value={previewBreakpoint.name}
           onValueChange={(value) => setPreviewBreakpoint(breakpoints.find(b => b.name === value))}
@@ -44,21 +44,21 @@ const PreviewPane = ({
           <SelectContent>
             {breakpoints.map((breakpoint) => (
               <SelectItem key={breakpoint.name} value={breakpoint.name}>
-                <div className="flex items-center">
-                  <breakpoint.icon className="mr-2 h-4 w-4" />
+                <div className="tw-flex tw-items-center">
+                  <breakpoint.icon className="tw-mr-2 tw-h-4 tw-w-4" />
                   {breakpoint.name}
                 </div>
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <div className="flex items-center">
-          <Sun className="h-4 w-4 mr-2" />
+        <div className="tw-flex tw-items-center">
+          <Sun className="tw-h-4 tw-w-4 tw-mr-2" />
           <Switch
             checked={isDarkMode}
             onCheckedChange={setIsDarkMode}
           />
-          <Moon className="h-4 w-4 ml-2" />
+          <Moon className="tw-h-4 tw-w-4 tw-ml-2" />
         </div>
       </div>
       <Tabs defaultValue="inputs">
@@ -89,10 +89,10 @@ const PreviewPane = ({
         </TabsContent>
       </Tabs>
       <div 
-        className={`border rounded p-4 ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white'}`}
+        className={`tw-border tw-rounded tw-p-4 ${isDarkMode ? 'tw-bg-gray-800 tw-text-white' : 'tw-bg-white'}`}
         style={{ width: `${previewBreakpoint.width}px`, maxWidth: '100%', margin: '0 auto' }}
       >
-        <h4 className="text-md font-semibold mb-2">Live Preview</h4>
+        <h4 className="tw-text-md tw-font-semibold tw-mb-2">Live Preview</h4>
         <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
       </div>
     </div>

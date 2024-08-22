@@ -71,7 +71,7 @@ const MainBuilder = ({
     return (
       <div 
         key={path.join('-')}
-        className={`border-2 border-dashed p-4 m-2 relative ${isSelected ? 'border-blue-500' : 'border-gray-300'}`}
+        className={`tw-border-2 tw-border-dashed tw-p-4 tw-m-2 tw-relative ${isSelected ? 'tw-border-blue-500' : 'tw-border-gray-300'}`}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => handleDrop(e, path)}
         onClick={(e) => {
@@ -79,7 +79,7 @@ const MainBuilder = ({
           setSelectedElement(path);
         }}
       >
-        <div className="absolute top-0 left-0 bg-gray-200 px-2 py-1 text-xs flex items-center">
+        <div className="tw-absolute tw-top-0 tw-left-0 tw-bg-gray-200 tw-px-2 tw-py-1 tw-text-xs tw-flex tw-items-center">
           <IconComponent size={16} className="mr-1" />
           {element.type}
           {element.type === ElementTypes.CONTAINER && (
@@ -88,20 +88,20 @@ const MainBuilder = ({
                 type="checkbox"
                 checked={element.isReactComponent}
                 onChange={() => toggleReactComponent(path)}
-                className="ml-2"
+                className="tw-ml-2"
               />
-              <label className="ml-1 mr-2">React</label>
+              <label className="tw-ml-1 tw-mr-2">React</label>
               <input
                 type="checkbox"
                 checked={element.isStoryComponent}
                 onChange={() => toggleStoryComponent(path)}
-                className="ml-2"
+                className="tw-ml-2"
               />
-              <label className="ml-1">Story</label>
+              <label className="tw-ml-1">Story</label>
             </>
           )}
         </div>
-        <div className="absolute top-0 right-0">
+        <div className="tw-absolute tw-top-0 tw-right-0">
           <Button 
             size="sm"
             variant="outline" 
@@ -110,18 +110,18 @@ const MainBuilder = ({
             <Plus size={16} />
           </Button>
         </div>
-        <div className="mt-8 mb-2 flex flex-wrap">
+        <div className="tw-mt-8 tw-mb-2 tw-flex tw-flex-wrap">
           {element.classes.map((cls, index) => (
-            <div key={index} className="bg-blue-100 text-blue-800 text-xs font-semibold mr-2 mb-2 px-2.5 py-0.5 rounded flex items-center">
+            <div key={index} className="tw-bg-blue-100 tw-text-blue-800 tw-text-xs tw-font-semibold tw-mr-2 tw-mb-2 tw-px-2.5 tw-py-0.5 tw-rounded tw-flex tw-items-center">
               {typeof cls === 'object' ? (
                 <>
-                  <div className="flex flex-wrap items-center mr-1">
+                  <div className="tw-flex tw-flex-wrap tw-items-center tw-mr-1">
                     {cls.prefixes.map((prefix, prefixIndex) => (
-                      <Badge key={prefixIndex} variant="outline" className="mr-1 mb-1">
+                      <Badge key={prefixIndex} variant="outline" className="tw-mr-1 tw-mb-1">
                         {prefix}
                         <X 
                           size={8} 
-                          className="ml-1 cursor-pointer" 
+                          className="tw-ml-1 tw-cursor-pointer" 
                           onClick={(e) => {
                             e.stopPropagation();
                             removePrefix(path, cls.name, prefix);
@@ -130,12 +130,12 @@ const MainBuilder = ({
                       </Badge>
                     ))}
                   </div>
-                  <span className="mr-1">{cls.name}</span>
+                  <span className="tw-mr-1">{cls.name}</span>
                 </>
               ) : cls}
               <X 
                 size={12} 
-                className="ml-1 cursor-pointer" 
+                className="tw-ml-1 tw-cursor-pointer" 
                 onClick={(e) => {
                   e.stopPropagation();
                   removeClass(path, typeof cls === 'object' ? cls.name : cls);
@@ -144,9 +144,9 @@ const MainBuilder = ({
             </div>
           ))}
         </div>
-        {element.content && <div className="text-sm">{element.content}</div>}
+        {element.content && <div className="tw-text-sm">{element.content}</div>}
         {(element.type === ElementTypes.CONTAINER || element.type === ElementTypes.UNORDERED_LIST || element.type === ElementTypes.ORDERED_LIST) && (
-          <div className="pl-4 border-l-2 border-gray-300">
+          <div className="tw-pl-4 tw-border-l-2 tw-border-gray-300">
             {element.children.map((child, index) => renderElement(child, [...path, index]))}
           </div>
         )}

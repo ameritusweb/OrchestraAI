@@ -7,8 +7,8 @@ function App() {
 
   return (
     <>
-      <h1>Sonata UI</h1>
       <div className="card">
+        <div className="card-header">Sonata UI</div>
         <TailwindBuilder />
       </div>
     </>
