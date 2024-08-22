@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Button } from "@/ui/button.jsx"
 import { Badge } from "@/ui/badge.jsx"
-import { Plus, Search, Box, Type, TextCursorInput as InputIcon, X, SquareAsterisk, Heading1, Heading2, List, Image, Link, Moon, Sun, Smartphone, Tablet, Monitor, BookOpen, Tag, CheckSquare, ToggleLeft, ChevronDown, Sliders } from 'lucide-react';
+import { Icon } from "@/ui/icon.jsx"
+import { X, Plus as PlusReact } from 'lucide-react';
 import AddElementModal from './AddElementModal.jsx';
 
 const ElementTypes = {
@@ -23,21 +24,21 @@ const ElementTypes = {
 };
   
 const ElementIcons = {
-  [ElementTypes.CONTAINER]: Box,
-  [ElementTypes.SPAN]: Type,
-  [ElementTypes.INPUT]: InputIcon,
-  [ElementTypes.BUTTON]: SquareAsterisk,
-  [ElementTypes.HEADING]: Heading1,
-  [ElementTypes.PARAGRAPH]: Heading2,
-  [ElementTypes.UNORDERED_LIST]: List,
-  [ElementTypes.ORDERED_LIST]: List,
-  [ElementTypes.LIST_ITEM]: Type,
-  [ElementTypes.IMAGE]: Image,
-  [ElementTypes.LINK]: Link,
-  [ElementTypes.SELECT]: ChevronDown,
-  [ElementTypes.CHECKBOX]: CheckSquare,
-  [ElementTypes.RADIO]: ToggleLeft,
-  [ElementTypes.SLIDER]: Sliders,
+  [ElementTypes.CONTAINER]: 'box',
+  [ElementTypes.SPAN]: 'type',
+  [ElementTypes.INPUT]: 'text-cursor-input',
+  [ElementTypes.BUTTON]: 'square-asterisk',
+  [ElementTypes.HEADING]: 'heading-1',
+  [ElementTypes.PARAGRAPH]: 'heading-2',
+  [ElementTypes.UNORDERED_LIST]: 'list',
+  [ElementTypes.ORDERED_LIST]: 'list',
+  [ElementTypes.LIST_ITEM]: 'type',
+  [ElementTypes.IMAGE]: 'image',
+  [ElementTypes.LINK]: 'link',
+  [ElementTypes.SELECT]: 'chevron-down',
+  [ElementTypes.CHECKBOX]: 'check-square',
+  [ElementTypes.RADIO]: 'toggle-left',
+  [ElementTypes.SLIDER]: 'sliders',
 };
 
 const MainBuilder = ({ 
@@ -65,9 +66,8 @@ const MainBuilder = ({
   };
 
   const renderElement = (element, path = []) => {
-    const IconComponent = ElementIcons[element.type];
     const isSelected = selectedElement && path.every((v, i) => v === selectedElement[i]);
-
+    const svgElementName = ElementIcons[element.type];
     return (
       <div 
         key={path.join('-')}
@@ -80,7 +80,7 @@ const MainBuilder = ({
         }}
       >
         <div className="tw-absolute tw-top-0 tw-left-0 tw-bg-gray-200 tw-px-2 tw-py-1 tw-text-xs tw-flex tw-items-center">
-          <IconComponent size={16} className="mr-1" />
+          <Icon svgName={svgElementName} width={16} height={16} className="tw-mr-1" color="black" />
           {element.type}
           {element.type === ElementTypes.CONTAINER && (
             <>
@@ -107,7 +107,7 @@ const MainBuilder = ({
             variant="outline" 
             onClick={() => openAddElementModal(path)}
           >
-            <Plus size={16} />
+            <PlusReact size={16} />
           </Button>
         </div>
         <div className="tw-mt-8 tw-mb-2 tw-flex tw-flex-wrap">

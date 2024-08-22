@@ -68,7 +68,7 @@ export const TabsContent = ({ value, children }) => {
 
   return (
     <div
-      className={`tab-pane ${activeTab === value ? 'show active' : 'tw-absolute tw-opacity-0'}`}
+      className={`tab-pane ${activeTab === value ? 'show active' : 'tw-absolute tw-opacity-0 tw-pointer-events-none'}`}
       id={value}
       role="tabpanel"
       aria-labelledby={`${value}-tab`}

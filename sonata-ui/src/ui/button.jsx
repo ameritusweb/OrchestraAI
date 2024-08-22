@@ -9,6 +9,7 @@ import PropTypes from 'prop-types';
  * @property {string} [className] - Additional CSS classes to apply to the button.
  * @property {React.MouseEventHandler<HTMLButtonElement>} [onClick] - Callback function to handle button clicks.
  * @property {React.Ref<HTMLButtonElement>} [ref] - Ref for the button element.
+ * @property {boolean} [disabled] - If true, disables the button.
  */
 
 /**
@@ -16,7 +17,7 @@ import PropTypes from 'prop-types';
  * @type {React.ForwardRefExoticComponent<Omit<ButtonProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>}
  */
 export const Button = React.forwardRef(
-  ({ children, size = 'md', variant = 'solid', className, onClick, ...props }, ref) => {
+  ({ children, size = 'md', variant = 'solid', className, onClick, disabled, ...props }, ref) => {
     const sizeClass = size === 'sm' ? 'btn-sm' : '';
     let variantClass = '';
 
@@ -37,6 +38,7 @@ export const Button = React.forwardRef(
         ref={ref}
         className={`btn ${sizeClass} ${variantClass} ${className || ''}`}
         onClick={onClick}
+        disabled={disabled}
         {...props}
       >
         {children}
@@ -53,4 +55,5 @@ Button.propTypes = {
   variant: PropTypes.oneOf(['outline', 'solid', 'destructive']),
   className: PropTypes.string,
   onClick: PropTypes.func,
+  disabled: PropTypes.bool, // Add the disabled prop type
 };

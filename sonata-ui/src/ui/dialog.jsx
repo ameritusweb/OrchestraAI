@@ -40,7 +40,7 @@ export const AlertDialog = ({ open, onOpenChange, children }) => {
     children: PropTypes.node.isRequired,
   };
 
-  export const Dialog = ({ open, onOpenChange, children }) => {
+  export const Dialog = ({ open, onOpenChange, children, className }) => {
     const modalRef = useRef(null);
   
     useEffect(() => {
@@ -63,9 +63,18 @@ export const AlertDialog = ({ open, onOpenChange, children }) => {
       };
     }, [open, onOpenChange]);
   
+    const handleBackdropClick = (e) => {
+      if (e.target === modalRef.current) {
+        onOpenChange(false); // Close the dialog if the backdrop is clicked
+      }
+    };
+
     return (
-      <div className="modal fade" tabIndex={-1} ref={modalRef}>
-        <div className="modal-dialog">
+      <div className="modal fade" tabIndex={-1} style={{display: open ? 'block' : 'none'}} ref={modalRef} onClick={handleBackdropClick}>
+        <div 
+          className={`modal-dialog ${className}`} 
+          onClick={(e) => e.stopPropagation()} // Prevent clicks inside the dialog from closing it
+        >
           {children}
         </div>
       </div>
@@ -76,6 +85,7 @@ export const AlertDialog = ({ open, onOpenChange, children }) => {
     open: PropTypes.bool.isRequired,
     onOpenChange: PropTypes.func.isRequired,
     children: PropTypes.node.isRequired,
+    className: PropTypes.string,
   };
 
 // Shared content components
